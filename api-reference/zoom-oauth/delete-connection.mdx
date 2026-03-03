@@ -1,0 +1,38 @@
+---
+title: "Delete Zoom OAuth Connection"
+api: "DELETE /api/v1/zoom_oauth_connections/{object_id}"
+description: "Deletes a Zoom OAuth connection."
+---
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Zoom OAuth Connection ID (e.g., `zoc_abcdef1234567890`)
+</ParamField>
+
+## Response
+
+Returns a `200` status code on success with no response body.
+
+<RequestExample>
+
+```bash cURL
+curl --request DELETE \
+  --url https://app.attendee.dev/api/v1/zoom_oauth_connections/zoc_abcdef1234567890 \
+  --header 'Authorization: Token YOUR_API_KEY_HERE' \
+  --header 'Content-Type: application/json'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{}
+```
+
+</ResponseExample>

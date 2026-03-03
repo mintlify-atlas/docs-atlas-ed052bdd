@@ -1,0 +1,156 @@
+---
+title: 'Introduction to Attendee'
+description: 'Meeting bots made easy - Bring meeting transcripts and recordings into your product in days instead of months'
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.png"
+  alt="Attendee - Meeting bots made easy"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.png"
+  alt="Attendee - Meeting bots made easy"
+/>
+
+## What is Attendee?
+
+Attendee is an open source API for managing meeting bots on platforms like Zoom, Google Meet, and Microsoft Teams. Building meeting bots is complex and time-consuming - Attendee abstracts away this complexity into a single developer-friendly REST API.
+
+<Note>
+  Meeting bots are powerful because they have access to the same audio and video streams as human users of meeting software. They power products like Gong and Otter.ai.
+</Note>
+
+## Why use Attendee?
+
+Building meeting bots from scratch is challenging across all platforms:
+
+- **Zoom** provides a powerful SDK, but it's low-level and advanced features like per-participant audio streams are only available in the C++ variants
+- **Google Meet** doesn't provide any official bot support, requiring you to run a full Chrome instance
+- **Microsoft Teams** has similar complexity and limited documentation
+
+Attendee saves you **months of development work** by providing a unified API across all major meeting platforms.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Multi-Platform Support"
+    icon="video"
+    href="/concepts/platforms"
+  >
+    Support for Zoom, Google Meet, and Microsoft Teams with a single API
+  </Card>
+  <Card
+    title="Real-Time Transcription"
+    icon="microphone"
+    href="/guides/transcription"
+  >
+    Get live transcripts with speaker identification and precise timestamps
+  </Card>
+  <Card
+    title="Recording & Media"
+    icon="record-vinyl"
+    href="/api-reference/recording/get-recording"
+  >
+    Record audio and video from meetings in multiple formats and views
+  </Card>
+  <Card
+    title="Interactive Bots"
+    icon="robot"
+    href="/concepts/bots"
+  >
+    Bots can speak, display images, send chat messages, and more
+  </Card>
+</CardGroup>
+
+## Bot Capabilities
+
+Attendee bots can perform a wide range of tasks within meetings:
+
+1. **Recording** - Capture audio and video from meetings
+2. **Transcription** - Real-time transcription with speaker identification
+3. **Speech** - Output audio and speak messages in meetings
+4. **Avatars** - Display custom images from the bot's virtual webcam
+5. **Chat** - Send and receive chat messages
+6. **Participants** - Track who joins and leaves meetings
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get your first bot into a meeting in under 5 minutes
+  </Card>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Learn how to authenticate your API requests
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/bots/create-bot"
+  >
+    Explore the complete API reference documentation
+  </Card>
+  <Card
+    title="Self-Hosting"
+    icon="server"
+    href="/self-hosting/setup"
+  >
+    Deploy Attendee on your own infrastructure
+  </Card>
+</CardGroup>
+
+## Platform Support
+
+Currently supported platforms:
+- Zoom (full support)
+- Google Meet (full support)
+- Microsoft Teams (full support)
+- Webex (coming soon)
+
+## Open Source & Self-Hosting
+
+Attendee is designed for convenient self-hosting. It runs as a Django app in a single Docker image with only Postgres and Redis as external dependencies.
+
+<Card
+  title="View on GitHub"
+  icon="github"
+  href="https://github.com/attendee-labs/attendee"
+>
+  Contribute to Attendee or deploy your own instance
+</Card>
+
+## Next Steps
+
+<Steps>
+  <Step title="Sign up for hosted instance">
+    [Create a free account](https://app.attendee.dev/accounts/signup/) on our hosted platform
+  </Step>
+  <Step title="Get your API key">
+    Navigate to the 'API Keys' section in the sidebar after signing in
+  </Step>
+  <Step title="Send your first bot to a meeting">
+    Follow our [quickstart guide](/quickstart) to join your first meeting
+  </Step>
+</Steps>
+
+<Warning>
+  Before you can use the API, you'll need to obtain Zoom OAuth credentials and a Deepgram API key. See the [prerequisites section](/quickstart#prerequisites) for details.
+</Warning>
+
+## Community & Support
+
+Join our community to get help and share feedback:
+
+- [Slack Community](https://join.slack.com/t/attendee-community/shared_invite/zt-3l43ns8cl-G8YnMccWVTugMlloUtSf9g)
+- [GitHub Issues](https://github.com/attendee-labs/attendee/issues)
+- [Schedule a call](https://calendly.com/d/cw6r-2n4-gcw/attendee-intro-meeting) for enterprise needs

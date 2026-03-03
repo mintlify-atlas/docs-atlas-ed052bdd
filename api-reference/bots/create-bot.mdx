@@ -1,0 +1,220 @@
+---
+title: Create Bot
+description: Create a new bot to join a meeting
+---
+
+## Endpoint
+
+```
+POST /api/v1/bots
+```
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+<ParamField header="Authorization" type="string" required>
+  Your API key in the format: `Token YOUR_API_KEY_HERE`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+## Request Body
+
+<ParamField body="meeting_url" type="string" required>
+  The URL of the meeting to join.
+  
+  Example: `https://zoom.us/j/123?pwd=456`
+</ParamField>
+
+<ParamField body="bot_name" type="string" required>
+  The name of the bot.
+  
+  Example: `My Bot`
+</ParamField>
+
+<ParamField body="bot_image" type="object">
+  The image for the bot's profile picture.
+  
+  <ParamField body="type" type="string" required>
+    Image content type. Currently only `image/png` is supported.
+  </ParamField>
+  
+  <ParamField body="data" type="string" required>
+    Base64 encoded PNG image data.
+  </ParamField>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  JSON object containing custom metadata to associate with the bot.
+  
+  Example: `{"customer_id": "abc123", "user": "john_doe"}`
+</ParamField>
+
+<ParamField body="bot_chat_message" type="object">
+  Chat message the bot will send after joining the meeting.
+  
+  <ParamField body="to" type="string">
+    Who to send the message to: `everyone`, `specific_user`, or `everyone_but_host`
+  </ParamField>
+  
+  <ParamField body="to_user_uuid" type="string">
+    The UUID of the user to send the message to. Required if `to` is `specific_user`.
+  </ParamField>
+  
+  <ParamField body="message" type="string" required>
+    The message text to send.
+  </ParamField>
+</ParamField>
+
+<ParamField body="join_at" type="string">
+  The time the bot should join the meeting. If not specified, the bot will attempt to join immediately.
+  
+  Format: ISO 8601 datetime (e.g., `2025-06-13T12:00:00Z`)
+</ParamField>
+
+<ParamField body="calendar_event_id" type="string">
+  The ID of the calendar event the bot should join.
+</ParamField>
+
+<ParamField body="deduplication_key" type="string">
+  Optional key for deduplicating bots. If a bot with this key already exists in a non-terminal state, the new bot will not be created and an error will be returned.
+</ParamField>
+
+<ParamField body="webhooks" type="array">
+  List of webhook subscriptions to create for this bot.
+  
+  Each item should have:
+  - `url` (string): The webhook URL (must be HTTPS)
+  - `triggers` (array): List of trigger types (e.g., `bot.state_change`, `transcript.update`)
+</ParamField>
+
+<ParamField body="transcription_settings" type="object">
+  The transcription settings for the bot.
+  
+  Example: `{"deepgram": {"language": "en"}}`
+</ParamField>
+
+<ParamField body="recording_settings" type="object">
+  The settings for the bot's recording.
+  
+  <ParamField body="format" type="string">
+    Format: `mp4`, `mp3`, or `none`. Defaults to `mp4`.
+  </ParamField>
+  
+  <ParamField body="view" type="string">
+    View: `speaker_view`, `gallery_view`, or `speaker_view_no_sidebar`. Defaults to `speaker_view`.
+  </ParamField>
+  
+  <ParamField body="resolution" type="string">
+    Resolution: `1080p` or `720p`. Defaults to `1080p`.
+  </ParamField>
+</ParamField>
+
+<ParamField body="voice_agent_settings" type="object">
+  Settings for the voice agent that the bot should load.
+  
+  <ParamField body="url" type="string">
+    URL of a website containing a voice agent.
+  </ParamField>
+  
+  <ParamField body="screenshare_url" type="string">
+    URL of a website to display via screenshare instead of webcam.
+  </ParamField>
+  
+  <ParamField body="reserve_resources" type="boolean">
+    Whether to reserve resources for starting a voice agent mid-meeting. Defaults to `false`.
+  </ParamField>
+</ParamField>
+
+## Response
+
+Returns the created bot object.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the bot (e.g., `bot_weIAju4OXNZkDTpZ`)
+</ResponseField>
+
+<ResponseField name="meeting_url" type="string">
+  The URL of the meeting the bot will join.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  Current state of the bot (typically `joining` or `scheduled`).
+</ResponseField>
+
+<ResponseField name="events" type="array">
+  Array of events that have occurred for this bot.
+</ResponseField>
+
+<ResponseField name="transcription_state" type="string">
+  Current transcription state (typically `not_started` for new bots).
+</ResponseField>
+
+<ResponseField name="recording_state" type="string">
+  Current recording state (typically `not_started` for new bots).
+</ResponseField>
+
+<ResponseField name="join_at" type="string">
+  ISO 8601 timestamp when the bot will join the meeting.
+</ResponseField>
+
+<ResponseField name="deduplication_key" type="string">
+  Deduplication key for the bot, if provided.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata associated with the bot.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST 'https://api.attendee.dev/api/v1/bots' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "meeting_url": "https://zoom.us/j/123?pwd=456",
+    "bot_name": "My Bot",
+    "metadata": {
+      "customer_id": "abc123"
+    },
+    "transcription_settings": {
+      "deepgram": {
+        "language": "en"
+      }
+    }
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": "bot_weIAju4OXNZkDTpZ",
+  "meeting_url": "https://zoom.us/j/123?pwd=456",
+  "state": "joining",
+  "events": [
+    {
+      "type": "join_requested",
+      "sub_type": null,
+      "created_at": "2024-01-18T12:34:56Z"
+    }
+  ],
+  "transcription_state": "not_started",
+  "recording_state": "not_started",
+  "join_at": "2024-01-18T12:34:56Z",
+  "deduplication_key": null,
+  "metadata": {
+    "customer_id": "abc123"
+  }
+}
+```
+
+## Error Codes
+
+- `201` - Bot created successfully
+- `400` - Invalid input (e.g., invalid meeting URL, missing required fields, bot with same deduplication key already exists)
+- `401` - Invalid or missing API key

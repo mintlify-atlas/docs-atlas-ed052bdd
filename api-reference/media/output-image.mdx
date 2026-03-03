@@ -1,0 +1,65 @@
+---
+title: Output Image
+api: POST /api/v1/bots/{object_id}/output_image
+---
+
+Causes the bot to display an image through its video feed in the meeting.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Request Body
+
+<ParamField body="type" type="string" required>
+  Image content type. Currently only `image/png` is supported.
+</ParamField>
+
+<ParamField body="data" type="string" required>
+  Base64 encoded image data in PNG format
+</ParamField>
+
+## Response
+
+Returns a 200 status code when the image request is successfully created.
+
+## Example Request
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/output_image \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "image/png",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "status": "success"
+}
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when:
+- Invalid image data or format
+- Missing required fields
+- Bot is not in a valid state to output images
+
+### 404 Not Found
+Returned when the bot ID does not exist.
+
+<Note>
+  The image will be displayed through the bot's video feed. The example above shows a base64-encoded red pixel in PNG format.
+</Note>

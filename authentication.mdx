@@ -1,0 +1,358 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate your API requests using token-based authentication'
+---
+
+## Overview
+
+The Attendee API uses **token-based authentication**. Every API request must include your API key in the `Authorization` header using the `Token` scheme.
+
+<Note>
+  All API requests must be made over HTTPS. Calls made over plain HTTP will fail.
+</Note>
+
+## Getting Your API Key
+
+<Steps>
+  <Step title="Create an account">
+    Sign up for a free account at [app.attendee.dev/accounts/signup](https://app.attendee.dev/accounts/signup/)
+  </Step>
+  
+  <Step title="Navigate to API Keys">
+    After signing in, go to the **API Keys** section in the sidebar
+  </Step>
+  
+  <Step title="Generate a new key">
+    Click "Create API Key" to generate a new token. Give it a descriptive name to help you identify it later.
+  </Step>
+  
+  <Step title="Copy your key">
+    Copy the API key immediately - you won't be able to see it again after closing the dialog.
+  </Step>
+</Steps>
+
+<Warning>
+  Store your API key securely. Never commit it to version control or expose it in client-side code.
+</Warning>
+
+## Making Authenticated Requests
+
+Include your API key in the `Authorization` header of every request:
+
+```bash
+Authorization: Token YOUR_API_KEY_HERE
+```
+
+### Full Request Example
+
+```bash cURL
+curl -X POST https://app.attendee.dev/api/v1/bots \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "meeting_url": "https://zoom.us/j/123456789",
+    "bot_name": "My Bot"
+  }'
+```
+
+<CodeGroup>
+
+```python Python
+import requests
+
+API_KEY = 'your_api_key_here'
+
+headers = {
+    'Authorization': f'Token {API_KEY}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.post(
+    'https://app.attendee.dev/api/v1/bots',
+    headers=headers,
+    json={
+        'meeting_url': 'https://zoom.us/j/123456789',
+        'bot_name': 'My Bot'
+    }
+)
+
+print(response.json())
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const API_KEY = 'your_api_key_here';
+
+const headers = {
+  'Authorization': `Token ${API_KEY}`,
+  'Content-Type': 'application/json'
+};
+
+const response = await axios.post(
+  'https://app.attendee.dev/api/v1/bots',
+  {
+    meeting_url: 'https://zoom.us/j/123456789',
+    bot_name: 'My Bot'
+  },
+  { headers }
+);
+
+console.log(response.data);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    apiKey := "your_api_key_here"
+    
+    payload := map[string]string{
+        "meeting_url": "https://zoom.us/j/123456789",
+        "bot_name":    "My Bot",
+    }
+    
+    jsonPayload, _ := json.Marshal(payload)
+    
+    req, _ := http.NewRequest(
+        "POST",
+        "https://app.attendee.dev/api/v1/bots",
+        bytes.NewBuffer(jsonPayload),
+    )
+    
+    req.Header.Set("Authorization", fmt.Sprintf("Token %s", apiKey))
+    req.Header.Set("Content-Type", "application/json")
+    
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        panic(err)
+    }
+    defer resp.Body.Close()
+    
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result)
+}
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+api_key = 'your_api_key_here'
+uri = URI('https://app.attendee.dev/api/v1/bots')
+
+headers = {
+  'Authorization' => "Token #{api_key}",
+  'Content-Type' => 'application/json'
+}
+
+payload = {
+  meeting_url: 'https://zoom.us/j/123456789',
+  bot_name: 'My Bot'
+}
+
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true
+
+request = Net::HTTP::Post.new(uri.path, headers)
+request.body = payload.to_json
+
+response = http.request(request)
+puts JSON.parse(response.body)
+```
+
+</CodeGroup>
+
+## Authentication Errors
+
+If authentication fails, you'll receive one of these error responses:
+
+### Missing API Key
+
+**Status Code:** `401 Unauthorized`
+
+```json
+{
+  "detail": "Authentication credentials were not provided."
+}
+```
+
+This occurs when the `Authorization` header is missing or empty.
+
+### Invalid API Key
+
+**Status Code:** `401 Unauthorized`
+
+```json
+{
+  "detail": "Invalid token."
+}
+```
+
+This occurs when:
+- The API key is incorrect
+- The API key has been revoked
+- The API key format is malformed
+
+### Incorrect Authorization Format
+
+**Status Code:** `401 Unauthorized`
+
+Make sure you're using the correct format:
+
+<CodeGroup>
+
+```bash Correct ✓
+Authorization: Token YOUR_API_KEY
+```
+
+```bash Incorrect ✗
+Authorization: Bearer YOUR_API_KEY
+Authorization: YOUR_API_KEY
+Authorization: Token: YOUR_API_KEY
+```
+
+</CodeGroup>
+
+## API Key Management
+
+### Creating Multiple Keys
+
+You can create multiple API keys for different environments or use cases:
+
+- **Production** - For your production application
+- **Staging** - For testing before deployment
+- **Development** - For local development
+- **CI/CD** - For automated testing pipelines
+
+<Tip>
+  Use descriptive names for your API keys to easily identify their purpose later.
+</Tip>
+
+### Rotating API Keys
+
+To rotate your API keys:
+
+1. Create a new API key in the Attendee dashboard
+2. Update your application to use the new key
+3. Test that everything works with the new key
+4. Revoke the old API key
+
+<Warning>
+  Once you revoke an API key, all requests using that key will immediately fail. Make sure your application is using the new key before revoking the old one.
+</Warning>
+
+### Revoking API Keys
+
+To revoke an API key:
+
+1. Navigate to the **API Keys** section in the dashboard
+2. Find the key you want to revoke
+3. Click the **Revoke** button
+4. Confirm the revocation
+
+Revoked keys cannot be recovered. You'll need to create a new key if you revoke one by mistake.
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Environment Variables" icon="lock">
+    Store API keys in environment variables, never hardcode them in your source code.
+    
+    ```bash
+    export ATTENDEE_API_KEY="your_api_key_here"
+    ```
+  </Card>
+  
+  <Card title="Restrict Key Access" icon="shield">
+    Only share API keys with team members who need them. Use separate keys for different environments.
+  </Card>
+  
+  <Card title="Rotate Regularly" icon="rotate">
+    Rotate your API keys periodically, especially if you suspect they may have been compromised.
+  </Card>
+  
+  <Card title="Monitor Usage" icon="chart-line">
+    Regularly review your API key usage in the dashboard to detect any suspicious activity.
+  </Card>
+</CardGroup>
+
+## Additional Credentials
+
+Besides your Attendee API key, you'll also need to configure:
+
+### Zoom OAuth Credentials
+
+Required for joining Zoom meetings. Configure these in the **Settings** section:
+
+- **Client ID** - From your Zoom General App
+- **Client Secret** - From your Zoom General App
+
+<Note>
+  See the [Quickstart guide](/quickstart#prerequisites) for detailed instructions on obtaining Zoom OAuth credentials.
+</Note>
+
+### Deepgram API Key
+
+Required for transcribing meetings. Add this in the **Settings** section:
+
+- Sign up at [console.deepgram.com](https://console.deepgram.com/signup)
+- Get 400 hours of free transcription
+- No credit card required
+
+## Self-Hosted Instances
+
+If you're running a self-hosted instance of Attendee:
+
+1. Replace `https://app.attendee.dev` with your instance URL
+2. Create API keys through your instance's dashboard
+3. Follow the same authentication process
+
+```bash
+curl -X POST https://your-instance.com/api/v1/bots \
+  -H 'Authorization: Token YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"meeting_url": "...", "bot_name": "My Bot"}'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Send your first bot to a meeting
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/bots/create-bot"
+  >
+    Explore all available endpoints
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/guides/webhooks"
+  >
+    Set up real-time notifications
+  </Card>
+  <Card
+    title="Bot Configuration"
+    icon="gear"
+    href="/api-reference/bots/create-bot"
+  >
+    Customize bot behavior
+  </Card>
+</CardGroup>

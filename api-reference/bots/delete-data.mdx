@@ -1,0 +1,136 @@
+---
+title: Delete Bot Data
+description: Permanently delete all data associated with a bot
+---
+
+## Endpoint
+
+```
+POST /api/v1/bots/{object_id}/delete_data
+```
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+<ParamField header="Authorization" type="string" required>
+  Your API key in the format: `Token YOUR_API_KEY_HERE`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  The unique identifier for the bot.
+  
+  Example: `bot_xxxxxxxxxxx`
+</ParamField>
+
+## Description
+
+Permanently deletes all data associated with this bot, including:
+- Recordings
+- Transcripts
+- Participant information
+- Chat messages
+- Any other meeting data captured by the bot
+
+<Warning>
+This action cannot be undone. The bot's metadata will not be deleted and the bot object will remain accessible, but all captured meeting data will be permanently removed.
+</Warning>
+
+<Note>
+After deletion, the bot's state will change to `data_deleted`. You can still retrieve the bot object and its metadata, but all meeting content will be gone.
+</Note>
+
+## Response
+
+Returns the bot object with updated state.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the bot.
+</ResponseField>
+
+<ResponseField name="meeting_url" type="string">
+  The URL of the meeting.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  Current state of the bot (`data_deleted` after successful deletion).
+</ResponseField>
+
+<ResponseField name="events" type="array">
+  Array of events that have occurred for this bot.
+</ResponseField>
+
+<ResponseField name="transcription_state" type="string">
+  Current transcription state.
+</ResponseField>
+
+<ResponseField name="recording_state" type="string">
+  Current recording state.
+</ResponseField>
+
+<ResponseField name="join_at" type="string">
+  ISO 8601 timestamp when the bot joined the meeting.
+</ResponseField>
+
+<ResponseField name="deduplication_key" type="string">
+  Deduplication key for the bot.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata associated with the bot (this is preserved after data deletion).
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST 'https://api.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/delete_data' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json'
+```
+
+## Example Response
+
+```json
+{
+  "id": "bot_weIAju4OXNZkDTpZ",
+  "meeting_url": "https://zoom.us/j/123?pwd=456",
+  "state": "data_deleted",
+  "events": [
+    {
+      "type": "join_requested",
+      "sub_type": null,
+      "created_at": "2024-01-18T12:34:56Z"
+    },
+    {
+      "type": "joined_meeting",
+      "sub_type": null,
+      "created_at": "2024-01-18T12:35:00Z"
+    },
+    {
+      "type": "data_deleted",
+      "sub_type": null,
+      "created_at": "2024-01-18T14:00:00Z"
+    }
+  ],
+  "transcription_state": "not_started",
+  "recording_state": "not_started",
+  "join_at": "2024-01-18T12:34:56Z",
+  "deduplication_key": null,
+  "metadata": {
+    "customer_id": "abc123"
+  }
+}
+```
+
+## Error Codes
+
+- `200` - Data successfully deleted
+- `400` - Bot is not in a valid state for data deletion (e.g., bot is still in a meeting)
+- `401` - Invalid or missing API key
+- `404` - Bot not found

@@ -1,0 +1,98 @@
+---
+title: List Participants
+api: GET /api/v1/bots/{object_id}/participants
+---
+
+Returns the list of participants for a bot. Results are paginated using cursor pagination.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination. Use the `next` value from the previous response to get the next page.
+</ParamField>
+
+<ParamField query="id" type="string">
+  Filter participants by participant ID (e.g., `par_xxxxxxxxxxx`)
+</ParamField>
+
+<ParamField query="is_host" type="boolean">
+  Filter participants by whether they are the meeting host
+</ParamField>
+
+## Response
+
+<ResponseField name="next" type="string | null">
+  URL for the next page of results, or null if no more results
+</ResponseField>
+
+<ResponseField name="previous" type="string | null">
+  URL for the previous page of results, or null if on first page
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of participant objects
+</ResponseField>
+
+### Participant Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the participant
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the participant
+</ResponseField>
+
+<ResponseField name="uuid" type="string">
+  UUID of the participant
+</ResponseField>
+
+<ResponseField name="user_uuid" type="string | null">
+  User UUID (platform-specific persistent identifier for the participant)
+</ResponseField>
+
+<ResponseField name="is_host" type="boolean">
+  Whether the participant is the meeting host
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participants \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Host Filter
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participants?is_host=true" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Participant ID Filter
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participants?id=par_abc123xyz" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Pagination
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participants?cursor=cD00ODY%3D" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```

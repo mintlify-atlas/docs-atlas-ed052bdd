@@ -1,0 +1,153 @@
+---
+title: 'Bot Lifecycle'
+description: 'Understanding bot states and lifecycle transitions'
+---
+
+## Overview
+
+Bots transition through various states during their lifecycle, from creation to completion. Understanding these states helps you monitor bot behavior and handle different scenarios in your application.
+
+## Bot States
+
+Here are all the possible states a bot can be in:
+
+### Pre-Meeting States
+
+<AccordionGroup>
+  <Accordion title="Ready">
+    Initial state when bot is created. The bot is ready to join the meeting but hasn't started the join process yet.
+  </Accordion>
+
+  <Accordion title="Scheduled">
+    Bot is scheduled to join at a future time. This state is used when you schedule a bot to join a meeting later.
+  </Accordion>
+
+  <Accordion title="Staged">
+    Bot resources are allocated and ready to join at the scheduled time. The bot is prepared and waiting for the scheduled join time.
+  </Accordion>
+</AccordionGroup>
+
+### Joining States
+
+<AccordionGroup>
+  <Accordion title="Joining">
+    Bot is attempting to join the meeting. This is the active connection phase where the bot is establishing its presence in the meeting.
+  </Accordion>
+
+  <Accordion title="Waiting Room">
+    Bot is in the meeting's waiting room, waiting to be admitted by a host or organizer.
+  </Accordion>
+</AccordionGroup>
+
+### Active Meeting States
+
+<AccordionGroup>
+  <Accordion title="Joined - Not Recording">
+    Bot has successfully joined the meeting but isn't recording yet. This might occur if recording hasn't been started or is configured to start manually.
+  </Accordion>
+
+  <Accordion title="Joined - Recording">
+    Bot has joined and is actively recording the meeting. This is the primary operational state for most use cases.
+  </Accordion>
+
+  <Accordion title="Joined - Recording Paused">
+    Bot has joined and recording is temporarily paused. Recording can be resumed without the bot leaving the meeting.
+  </Accordion>
+
+  <Accordion title="Joined - Recording Permission Denied">
+    Bot has joined but doesn't have permission to record. This can occur in meetings where recording permissions are restricted.
+  </Accordion>
+</AccordionGroup>
+
+### Breakout Room States
+
+<AccordionGroup>
+  <Accordion title="Joining Breakout Room">
+    Bot is moving to a breakout room within the main meeting.
+  </Accordion>
+
+  <Accordion title="Leaving Breakout Room">
+    Bot is leaving a breakout room and returning to the main meeting.
+  </Accordion>
+</AccordionGroup>
+
+### Exit States
+
+<AccordionGroup>
+  <Accordion title="Leaving">
+    Bot is in the process of leaving the meeting. This is the active disconnection phase.
+  </Accordion>
+
+  <Accordion title="Post Processing">
+    Bot has left the meeting and is processing recordings and transcripts. This includes finalizing recordings, generating transcripts, and preparing data for download.
+  </Accordion>
+</AccordionGroup>
+
+### Terminal States
+
+<AccordionGroup>
+  <Accordion title="Ended">
+    Bot has completed all tasks, and recordings and transcripts are available for download. This is the successful completion state.
+  </Accordion>
+
+  <Accordion title="Fatal Error">
+    Bot encountered an unrecoverable error and could not complete its tasks. Check bot events for error details.
+  </Accordion>
+
+  <Accordion title="Data Deleted">
+    Bot data has been permanently deleted, including recordings, transcripts, and participant information. Only metadata is retained for audit purposes.
+  </Accordion>
+</AccordionGroup>
+
+## App Session States
+
+For advanced use cases using app sessions (Zoom RTMS, Google Meet Media API):
+
+- **Connecting** - App session is establishing connection
+- **Connected** - App session is successfully connected
+- **Disconnecting** - App session is disconnecting
+
+<Info>
+  App sessions provide an alternative connection method to traditional bot participants for specific platform features.
+</Info>
+
+## State Transitions
+
+Bots typically follow these transition patterns:
+
+### Standard Flow
+```
+Ready → Joining → Joined - Recording → Leaving → Post Processing → Ended
+```
+
+### Scheduled Bot Flow
+```
+Scheduled → Staged → Joining → Joined - Recording → Leaving → Post Processing → Ended
+```
+
+### Waiting Room Flow
+```
+Ready → Joining → Waiting Room → Joined - Recording → Leaving → Post Processing → Ended
+```
+
+### Breakout Room Flow
+```
+Joined - Recording → Joining Breakout Room → Joined - Recording → Leaving Breakout Room → Joined - Recording
+```
+
+### Error Flow
+```
+Ready → Joining → Fatal Error
+```
+
+<Note>
+  Monitor bot state changes via webhooks to receive real-time notifications and handle state transitions in your application.
+</Note>
+
+## Best Practices
+
+1. **Monitor state changes** - Use webhooks to track bot state transitions in real-time
+2. **Handle errors gracefully** - Check for `fatal_error` state and implement retry logic if needed
+3. **Wait for completion** - Don't attempt to retrieve recordings until the bot reaches the `ended` state
+4. **Respect waiting rooms** - If a bot is in the `waiting_room` state, ensure someone admits it to the meeting
+5. **Clean up data** - Use the data deletion API when recordings are no longer needed to manage storage

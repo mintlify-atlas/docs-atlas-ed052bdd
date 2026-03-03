@@ -1,0 +1,102 @@
+---
+title: Get Chat Messages
+api: GET /api/v1/bots/{object_id}/chat_messages
+---
+
+Returns chat messages sent in the meeting. If the meeting is still in progress, this returns messages sent so far. Results are paginated using cursor pagination.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination. Use the `next` value from the previous response to get the next page.
+</ParamField>
+
+<ParamField query="updated_after" type="string">
+  Only return chat messages created after this time. Useful when polling for updates. Format: ISO 8601 datetime (e.g., `2024-01-18T12:34:56Z`)
+</ParamField>
+
+## Response
+
+<ResponseField name="next" type="string | null">
+  URL for the next page of results, or null if no more results
+</ResponseField>
+
+<ResponseField name="previous" type="string | null">
+  URL for the previous page of results, or null if on first page
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of chat message objects
+</ResponseField>
+
+### Chat Message Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the chat message
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Content of the chat message
+</ResponseField>
+
+<ResponseField name="timestamp" type="integer">
+  Unix timestamp of when the message was sent
+</ResponseField>
+
+<ResponseField name="timestamp_ms" type="string">
+  Timestamp in milliseconds as a string
+</ResponseField>
+
+<ResponseField name="to" type="string">
+  Recipient of the message (e.g., 'everyone', 'specific_user')
+</ResponseField>
+
+<ResponseField name="sender_name" type="string">
+  Name of the message sender
+</ResponseField>
+
+<ResponseField name="sender_uuid" type="string">
+  UUID of the message sender
+</ResponseField>
+
+<ResponseField name="sender_user_uuid" type="string | null">
+  User UUID of the sender (platform-specific persistent identifier)
+</ResponseField>
+
+<ResponseField name="additional_data" type="object">
+  Additional metadata about the message
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/chat_messages \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Polling
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/chat_messages?updated_after=2024-01-18T12:34:56Z" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Pagination
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/chat_messages?cursor=cD00ODY%3D" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```

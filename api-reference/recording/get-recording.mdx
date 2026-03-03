@@ -1,0 +1,47 @@
+---
+title: Get Recording
+api: GET /api/v1/bots/{object_id}/recording
+---
+
+Returns a short-lived S3 URL for downloading the recording of a bot's meeting session.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Response
+
+<ResponseField name="url" type="string">
+  Short-lived S3 URL for downloading the recording. This URL will expire after a limited time.
+</ResponseField>
+
+<ResponseField name="start_timestamp_ms" type="integer">
+  Timestamp in milliseconds when the recording started
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/recording \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example Response
+
+```json
+{
+  "url": "https://attendee-short-term-storage-production.s3.amazonaws.com/e4da3b7fbbce2345d7772b0674a318d5.mp4?...",
+  "start_timestamp_ms": 1733114771000
+}
+```
+
+<Note>
+  The S3 URL is short-lived and should be downloaded promptly. If you need persistent storage, consider using the external media storage settings when creating the bot.
+</Note>

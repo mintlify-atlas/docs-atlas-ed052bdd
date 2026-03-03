@@ -1,80 +1,328 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Get your first meeting bot up and running in under 5 minutes'
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you can send bots to meetings, you'll need:
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Attendee API Key">
+    Create an account at [app.attendee.dev](https://app.attendee.dev/accounts/signup/), sign in, and navigate to the 'API Keys' section in the sidebar to generate your key.
+  </Step>
+  
+  <Step title="Zoom OAuth Credentials">
+    Required for joining Zoom meetings. These are the Zoom app client ID and secret that uniquely identify your bot.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    - Navigate to [Zoom Marketplace](https://marketplace.zoom.us/) and register/log into your developer account
+    - Click "Develop" → "Build App" → choose "General App"
+    - Copy the Client ID and Client Secret from the 'App Credentials' section
+    - Go to the Embed tab under Features, then enable the Meeting SDK toggle
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+    For detailed instructions, see [this guide](https://developers.zoom.us/docs/meeting-sdk/developer-accounts/) or watch [this video](https://www.loom.com/embed/7cbd3eab1bc4438fb1badcb3787996d6?sid=825a92b5-51ca-447c-86c1-c45f5294ec9d).
+  </Step>
+  
+  <Step title="Deepgram API Key">
+    Required for transcribing Zoom meetings. Sign up at [console.deepgram.com](https://console.deepgram.com/signup) - no credit card required, includes 400 hours of free transcription.
+  </Step>
+</Steps>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Enter your Zoom OAuth credentials and Deepgram API key in the Attendee UI under the 'Settings' section in the sidebar.
 </Note>
+
+## Your First Bot
+
+Let's send a bot to join a meeting and get a transcript in three simple steps.
+
+<Steps>
+  <Step title="Create a bot and join a meeting">
+    Make a POST request to create a bot. The bot will immediately attempt to join the meeting:
+
+    ```bash
+    curl -X POST https://app.attendee.dev/api/v1/bots \
+      -H 'Authorization: Token <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "meeting_url": "https://us05web.zoom.us/j/84315220467?pwd=9M1SQg2Pu2l0cB078uz6AHeWelSK19.1",
+        "bot_name": "My Bot"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "id": "bot_3hfP0PXEsNinIZmh",
+      "meeting_url": "https://us05web.zoom.us/j/84315220467?pwd=9M1SQg2Pu2l0cB078uz6AHeWelSK19.1",
+      "state": "joining",
+      "transcription_state": "not_started",
+      "recording_state": "not_started"
+    }
+    ```
+
+    <Note>
+      The bot ID (`bot_3hfP0PXEsNinIZmh`) is returned in the response. Save this - you'll need it to check the bot's status and retrieve the transcript.
+    </Note>
+  </Step>
+
+  <Step title="Monitor the bot's state">
+    Poll the bot to check its status. The bot will transition through states like `joining` → `joined_recording` → `leaving` → `ended`:
+
+    ```bash
+    curl -X GET https://app.attendee.dev/api/v1/bots/bot_3hfP0PXEsNinIZmh \
+      -H 'Authorization: Token <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json'
+    ```
+
+    **Response when meeting ends:**
+    ```json
+    {
+      "id": "bot_3hfP0PXEsNinIZmh",
+      "meeting_url": "https://us05web.zoom.us/j/84315220467?pwd=9M1SQg2Pu2l0cB078uz6AHeWelSK19.1",
+      "state": "ended",
+      "transcription_state": "complete",
+      "recording_state": "complete"
+    }
+    ```
+
+    <Warning>
+      Wait for both `state: "ended"` and `transcription_state: "complete"` before requesting the transcript.
+    </Warning>
+  </Step>
+
+  <Step title="Retrieve the transcript">
+    Once transcription is complete, fetch the full transcript:
+
+    ```bash
+    curl -X GET https://app.attendee.dev/api/v1/bots/bot_3hfP0PXEsNinIZmh/transcript \
+      -H 'Authorization: Token <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json'
+    ```
+
+    **Response:**
+    ```json
+    [
+      {
+        "speaker_name": "Noah Duncan",
+        "speaker_uuid": "16778240",
+        "speaker_user_uuid": "AAB6E21A-6B36-EA95-58EC-5AF42CD48AF8",
+        "timestamp_ms": 1079,
+        "duration_ms": 7710,
+        "transcription": "You can totally record this, buddy. You can totally record this. Go for it, man."
+      },
+      {
+        "speaker_name": "Jane Smith",
+        "speaker_uuid": "16778241",
+        "speaker_user_uuid": "BBB6E21A-6B36-EA95-58EC-5AF42CD48AF9",
+        "timestamp_ms": 9320,
+        "duration_ms": 4200,
+        "transcription": "Thanks for joining! Let's get started with today's agenda."
+      }
+    ]
+    ```
+
+    <Note>
+      You can also query this endpoint **during** the meeting to get partial transcripts in real-time.
+    </Note>
+  </Step>
+</Steps>
+
+## Understanding Bot States
+
+Bots go through several states during their lifecycle:
+
+| State | Description |
+|-------|-------------|
+| `ready` | Initial state when bot is created |
+| `joining` | Bot is attempting to join the meeting |
+| `joined_not_recording` | Bot has joined but isn't recording yet |
+| `joined_recording` | Bot is actively recording the meeting |
+| `waiting_room` | Bot is in the meeting's waiting room |
+| `leaving` | Bot is leaving the meeting |
+| `post_processing` | Bot is processing recordings and transcripts |
+| `ended` | Meeting ended, all data is available |
+| `fatal_error` | Bot encountered an unrecoverable error |
+
+## Code Examples
+
+<CodeGroup>
+
+```python Python
+import requests
+import time
+
+API_KEY = 'your_api_key_here'
+BASE_URL = 'https://app.attendee.dev/api/v1'
+
+headers = {
+    'Authorization': f'Token {API_KEY}',
+    'Content-Type': 'application/json'
+}
+
+# Create a bot
+response = requests.post(
+    f'{BASE_URL}/bots',
+    headers=headers,
+    json={
+        'meeting_url': 'https://zoom.us/j/123456789',
+        'bot_name': 'My Bot'
+    }
+)
+
+bot = response.json()
+bot_id = bot['id']
+print(f'Bot created: {bot_id}')
+
+# Poll until meeting ends
+while True:
+    response = requests.get(
+        f'{BASE_URL}/bots/{bot_id}',
+        headers=headers
+    )
+    bot = response.json()
+    
+    if bot['state'] == 'ended' and bot['transcription_state'] == 'complete':
+        break
+    
+    print(f"Bot state: {bot['state']}, Transcription: {bot['transcription_state']}")
+    time.sleep(5)
+
+# Get transcript
+response = requests.get(
+    f'{BASE_URL}/bots/{bot_id}/transcript',
+    headers=headers
+)
+
+transcript = response.json()
+for utterance in transcript:
+    print(f"{utterance['speaker_name']}: {utterance['transcription']}")
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const API_KEY = 'your_api_key_here';
+const BASE_URL = 'https://app.attendee.dev/api/v1';
+
+const headers = {
+  'Authorization': `Token ${API_KEY}`,
+  'Content-Type': 'application/json'
+};
+
+// Create a bot
+const createBot = async () => {
+  const response = await axios.post(
+    `${BASE_URL}/bots`,
+    {
+      meeting_url: 'https://zoom.us/j/123456789',
+      bot_name: 'My Bot'
+    },
+    { headers }
+  );
+  
+  return response.data;
+};
+
+// Poll bot status
+const waitForCompletion = async (botId) => {
+  while (true) {
+    const response = await axios.get(
+      `${BASE_URL}/bots/${botId}`,
+      { headers }
+    );
+    
+    const bot = response.data;
+    
+    if (bot.state === 'ended' && bot.transcription_state === 'complete') {
+      return;
+    }
+    
+    console.log(`Bot state: ${bot.state}, Transcription: ${bot.transcription_state}`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+};
+
+// Get transcript
+const getTranscript = async (botId) => {
+  const response = await axios.get(
+    `${BASE_URL}/bots/${botId}/transcript`,
+    { headers }
+  );
+  
+  return response.data;
+};
+
+// Main execution
+(async () => {
+  const bot = await createBot();
+  console.log(`Bot created: ${bot.id}`);
+  
+  await waitForCompletion(bot.id);
+  
+  const transcript = await getTranscript(bot.id);
+  transcript.forEach(utterance => {
+    console.log(`${utterance.speaker_name}: ${utterance.transcription}`);
+  });
+})();
+```
+
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Learn about API key management and security
+  </Card>
+  <Card
+    title="Bot Lifecycle"
+    icon="circle-notch"
+    href="/concepts/bot-lifecycle"
+  >
+    Deep dive into bot states and lifecycle management
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/guides/webhooks"
+  >
+    Set up webhooks for real-time bot state notifications
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/bots/create-bot"
+  >
+    Explore the complete API reference
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Bot stuck in 'waiting_room' state">
+    The bot needs to be admitted to the meeting by a host. Either:
+    - Have a meeting host manually admit the bot
+    - Disable the waiting room in your meeting settings
+    - Configure automatic leave settings to exit after a timeout
+  </Accordion>
+
+  <Accordion title="Authentication failed">
+    Verify that:
+    - Your API key is correct and active
+    - You've entered valid Zoom OAuth credentials in Settings
+    - Your Deepgram API key is valid
+  </Accordion>
+
+  <Accordion title="Transcript is empty">
+    Check that:
+    - The meeting had actual speech (silence won't produce transcripts)
+    - The `transcription_state` is `complete` before requesting the transcript
+    - Your Deepgram API key has sufficient credits
+  </Accordion>
+</AccordionGroup>

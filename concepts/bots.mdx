@@ -1,0 +1,100 @@
+---
+title: 'Bots'
+description: 'Understanding meeting bots and their capabilities'
+---
+
+## What is a Bot?
+
+In the Attendee platform, a bot is an automated participant that can join virtual meetings across Zoom, Google Meet, and Microsoft Teams to perform various tasks such as recording and transcription.
+
+Bots function as virtual meeting participants with access to the same audio and video streams as human users. They power software applications that need to interact with or capture data from meetings.
+
+## Bot Capabilities
+
+Bots can perform the following functions within meetings:
+
+### Recording
+Bots can record audio and video from meetings in multiple formats:
+- **MP4/WebM** - Audio and video recording
+- **MP3** - Audio-only recording
+- **No recording** - Join meetings without recording
+
+### Transcription
+Real-time transcription with advanced features:
+- Realtime transcription
+- Multiple language support
+- Automatic language detection
+- Speaker identification / Diarization
+- Precise timestamps for each utterance
+- Support for third-party transcription providers or platform closed captions
+
+### Speech
+Bots can speak arbitrary audio into the meeting, enabling voice interactions and announcements.
+
+### Avatars
+Bots can display arbitrary images from their virtual webcam, allowing for custom visual representation.
+
+### Chat
+Bots can both record and send chat messages within meetings.
+
+## Configuration Options
+
+Bots offer extensive configuration to customize their behavior:
+
+### Transcription Settings
+- **Language selection** - Choose the transcription language
+- **Automatic language detection** - Let the bot detect the spoken language
+- **Provider-specific options** - Configure settings for different transcription providers
+
+### Recording Settings
+- **Recording type** - Audio and Video / Audio Only
+- **Recording view** - Speaker View / Gallery View
+- **Recording format** - MP4, WebM, MP3, or None
+
+### Automatic Leave Settings
+
+Configure when bots should automatically leave meetings:
+- How long should the bot wait to be let into the meeting before giving up?
+- How long should it be silent before the bot leaves?
+- How long should the bot be the only one in the meeting before it leaves?
+- How long can the meeting last before the bot leaves?
+
+<Info>
+  Automatic leave settings help optimize resource usage and prevent bots from staying in meetings unnecessarily.
+</Info>
+
+### Webhooks
+
+Receive real-time notifications for:
+- Bot state changes
+- Transcript updates
+
+## Data Management
+
+### Data Deletion
+
+You can permanently delete all data associated with a bot, including recordings, transcripts, and participant information.
+
+<Note>
+  To delete bot data, use the `POST /api/v1/bots/{bot_id}/delete_data` endpoint. This action:
+  - Is irreversible and cannot be undone
+  - Only works for bots in the `ended` or `fatal_error` states
+  - Preserves bot metadata for audit purposes
+  - Moves the bot to the `data_deleted` state
+</Note>
+
+Metadata fields (like bot ID, meeting URL, creation time) are retained for audit purposes even after data deletion.
+
+## FAQs
+
+<Accordion title="What meeting platforms do bots support?">
+  Attendee bots can join meetings on Zoom, Google Meet, and Microsoft Teams.
+</Accordion>
+
+<Accordion title="Can bots join meetings anonymously?">
+  Bots join as regular participants and are visible to other meeting attendees. They can be configured with custom names and avatars.
+</Accordion>
+
+<Accordion title="What happens to bot data when a meeting ends?">
+  When a meeting ends, the bot processes recordings and transcripts, making them available for download. Data persists until explicitly deleted via the API.
+</Accordion>

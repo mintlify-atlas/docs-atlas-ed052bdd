@@ -1,0 +1,57 @@
+---
+title: Output Audio
+api: POST /api/v1/bots/{object_id}/output_audio
+---
+
+Causes the bot to output audio in the meeting. The audio data should be base64-encoded MP3 format.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Request Body
+
+<ParamField body="type" type="string" required>
+  Audio content type. Currently only `audio/mp3` is supported.
+</ParamField>
+
+<ParamField body="data" type="string" required>
+  Base64 encoded audio data in MP3 format
+</ParamField>
+
+## Response
+
+Returns a 200 status code when the audio request is successfully created.
+
+## Example Request
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/output_audio \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "audio/mp3",
+    "data": "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA..."
+  }'
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when:
+- Invalid audio data format
+- Missing required fields
+- Bot is not in a valid state to output audio
+
+### 404 Not Found
+Returned when the bot ID does not exist.
+
+<Note>
+  The audio will play through the bot's audio output in the meeting. Make sure the bot has joined the meeting before attempting to output audio.
+</Note>

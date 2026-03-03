@@ -1,0 +1,48 @@
+---
+title: Resume Recording
+api: POST /api/v1/bots/{object_id}/resume_recording
+---
+
+Resumes a paused recording for a bot.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Response
+
+Returns the updated bot object with recording state changed from `paused` to `in_progress`.
+
+<ResponseField name="id" type="string">
+  Bot ID
+</ResponseField>
+
+<ResponseField name="recording_state" type="string">
+  Current recording state. Will be `in_progress` after successful resume.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  Bot state (e.g., `joined_recording`)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/resume_recording \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when the bot is not in a valid state to resume recording (e.g., recording is not currently paused).
+
+### 404 Not Found
+Returned when the bot ID does not exist.

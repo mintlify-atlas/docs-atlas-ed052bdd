@@ -1,0 +1,121 @@
+---
+title: "List Calendars"
+api: "GET /api/v1/calendars"
+description: "Returns a list of calendars for the authenticated project. Results are paginated using cursor pagination."
+---
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination
+</ParamField>
+
+<ParamField query="deduplication_key" type="string">
+  Filter calendars by deduplication key
+</ParamField>
+
+## Response
+
+<ResponseField name="next" type="string">
+  URL for the next page of results (null if no more results)
+</ResponseField>
+
+<ResponseField name="previous" type="string">
+  URL for the previous page of results (null if on first page)
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of calendar objects
+  
+  <ResponseField name="id" type="string">
+    Unique identifier for the calendar
+  </ResponseField>
+  
+  <ResponseField name="platform" type="string">
+    Calendar platform (`google` or `microsoft`)
+  </ResponseField>
+  
+  <ResponseField name="client_id" type="string">
+    Client ID for the calendar platform authentication
+  </ResponseField>
+  
+  <ResponseField name="platform_uuid" type="string">
+    UUID of the calendar on the platform
+  </ResponseField>
+  
+  <ResponseField name="state" type="string">
+    Connection state (`connected` or `disconnected`)
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="object">
+    Metadata associated with the calendar
+  </ResponseField>
+  
+  <ResponseField name="deduplication_key" type="string">
+    Optional key for deduplicating calendars
+  </ResponseField>
+  
+  <ResponseField name="connection_failure_data" type="object">
+    Information about connection failures, if any
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Timestamp when the calendar was created (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Timestamp when the calendar was last updated (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="last_successful_sync_at" type="string">
+    Timestamp of the last successful sync (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="last_attempted_sync_at" type="string">
+    Timestamp of the last attempted sync (ISO 8601 format)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url 'https://app.attendee.dev/api/v1/calendars?deduplication_key=user-abcd' \
+  --header 'Authorization: Token YOUR_API_KEY_HERE' \
+  --header 'Content-Type: application/json'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "cal_abcdef1234567890",
+      "platform": "google",
+      "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
+      "platform_uuid": "user@example.com",
+      "state": "connected",
+      "metadata": {
+        "tenant_id": "1234567890"
+      },
+      "deduplication_key": "user-abcd",
+      "connection_failure_data": null,
+      "created_at": "2025-01-13T10:30:00.123456Z",
+      "updated_at": "2025-01-13T10:30:00.123456Z",
+      "last_successful_sync_at": "2025-01-13T11:00:00.123456Z",
+      "last_attempted_sync_at": "2025-01-13T11:00:00.123456Z"
+    }
+  ]
+}
+```
+
+</ResponseExample>

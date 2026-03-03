@@ -1,0 +1,67 @@
+---
+title: Delete Bot
+description: Delete a scheduled bot
+---
+
+## Endpoint
+
+```
+DELETE /api/v1/bots/{object_id}
+```
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+<ParamField header="Authorization" type="string" required>
+  Your API key in the format: `Token YOUR_API_KEY_HERE`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  The unique identifier for the bot.
+  
+  Example: `bot_xxxxxxxxxxx`
+</ParamField>
+
+## Description
+
+Deletes a scheduled bot. This endpoint can only be used to delete bots that are in the `scheduled` state and have not yet joined a meeting.
+
+<Warning>
+This endpoint permanently deletes the bot. To remove a bot from an active meeting, use the [Leave Meeting](/api-reference/bots/leave-meeting) endpoint instead.
+</Warning>
+
+<Note>
+If you need to delete data for a bot that has already joined a meeting, use the [Delete Bot Data](/api-reference/bots/delete-data) endpoint.
+</Note>
+
+## Response
+
+Returns a `200` status code on success with no response body.
+
+## Example Request
+
+```bash
+curl -X DELETE 'https://api.attendee.dev/api/v1/bots/bot_xxxxxxxxxxx' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json'
+```
+
+## Example Response
+
+```
+HTTP/1.1 200 OK
+```
+
+## Error Codes
+
+- `200` - Scheduled bot deleted successfully
+- `400` - Bot cannot be deleted (e.g., bot is not in `scheduled` state)
+- `401` - Invalid or missing API key
+- `404` - Bot not found

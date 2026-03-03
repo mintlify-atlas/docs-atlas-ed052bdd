@@ -1,0 +1,233 @@
+---
+title: 'Self-Hosting Setup'
+description: 'Initial setup and prerequisites for self-hosting Attendee'
+---
+
+## Overview
+
+Attendee is designed for convenient self-hosting. It runs as a Django application in a single Docker image, with only two external service dependencies:
+
+- **PostgreSQL** - Database for application data
+- **Redis** - Message broker for background tasks
+
+<Note>
+By self-hosting Attendee, you can reduce costs by 10x compared to closed-source vendors.
+</Note>
+
+## System Requirements
+
+### Hardware Requirements
+
+- **CPU**: 2+ cores recommended
+- **Memory**: 4GB RAM minimum, 8GB+ recommended
+- **Storage**: 20GB+ for Docker images and data
+- **Platform**: Linux (Ubuntu 22.04 recommended)
+
+### Software Prerequisites
+
+<Steps>
+  <Step title="Install Docker">
+    Docker is required to run Attendee. Install Docker Engine following the [official installation guide](https://docs.docker.com/engine/install/).
+
+    Verify your installation:
+    ```bash
+    docker --version
+    ```
+  </Step>
+
+  <Step title="Install Docker Compose">
+    Docker Compose is used to orchestrate the multi-container setup.
+
+    ```bash
+    docker compose version
+    ```
+
+    <Note>
+    Modern Docker installations include Compose V2 by default.
+    </Note>
+  </Step>
+
+  <Step title="Clone the Repository">
+    Clone the Attendee repository to your server:
+
+    ```bash
+    git clone https://github.com/Attendee-AI/Attendee.git
+    cd Attendee
+    ```
+  </Step>
+</Steps>
+
+## Required Services
+
+### PostgreSQL
+
+Attendee requires PostgreSQL 15.3 or higher. You can use:
+
+- The included PostgreSQL container (recommended for development)
+- An external PostgreSQL instance
+- A managed PostgreSQL service (AWS RDS, Google Cloud SQL, etc.)
+
+### Redis
+
+Redis 7+ is used as a message broker for Celery workers. You can use:
+
+- The included Redis container (recommended for development)
+- An external Redis instance
+- A managed Redis service
+
+## External Service Accounts
+
+Before running Attendee, you'll need to set up accounts with the following services:
+
+<Steps>
+  <Step title="AWS Account (Required)">
+    AWS S3 is used for storing meeting recordings and media files.
+
+    1. Create an [AWS account](https://aws.amazon.com/)
+    2. Set up an S3 bucket for media storage
+    3. Create IAM credentials with S3 access
+    4. Note your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+  </Step>
+
+  <Step title="Zoom OAuth Credentials (Required for Zoom)">
+    Required to join Zoom meetings with your bot.
+
+    1. Navigate to [Zoom Marketplace](https://marketplace.zoom.us/)
+    2. Register or log into your developer account
+    3. Click "Develop" → "Build App" → Choose "General App"
+    4. Copy the **Client ID** and **Client Secret** from 'App Credentials'
+    5. Go to the Embed tab → Enable **Meeting SDK** toggle
+
+    For detailed instructions, see [Zoom's official guide](https://developers.zoom.us/docs/meeting-sdk/developer-accounts/).
+  </Step>
+
+  <Step title="Deepgram API Key (Required for Transcription)">
+    Deepgram provides speech-to-text transcription for meetings.
+
+    1. Sign up at [Deepgram Console](https://console.deepgram.com/signup)
+    2. No credit card required - includes 400 hours of free transcription
+    3. Create an API key from the dashboard
+
+    <Note>
+    Alternative transcription providers may be supported in future versions.
+    </Note>
+  </Step>
+</Steps>
+
+## Running in Development Mode
+
+For local development and testing, follow these steps:
+
+<Steps>
+  <Step title="Build the Docker Image">
+    Build the Attendee Docker image (takes approximately 5 minutes):
+
+    ```bash
+    docker compose -f dev.docker-compose.yaml build
+    ```
+  </Step>
+
+  <Step title="Generate Environment Variables">
+    Create a `.env` file with default configuration:
+
+    <CodeGroup>
+    ```bash Linux/Mac
+    docker compose -f dev.docker-compose.yaml run --rm attendee-app-local python init_env.py > .env
+    ```
+
+    ```powershell Windows
+    docker compose -f dev.docker-compose.yaml run --rm attendee-app-local python init_env.py | Out-File -Encoding utf8 .env
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Configure AWS Credentials">
+    Edit the generated `.env` file and add your AWS credentials:
+
+    ```bash
+    # Edit .env file
+    nano .env
+    ```
+
+    Add your AWS information:
+    ```bash
+    AWS_ACCESS_KEY_ID=your_access_key_here
+    AWS_SECRET_ACCESS_KEY=your_secret_key_here
+    AWS_STORAGE_BUCKET_NAME=your_bucket_name
+    AWS_S3_REGION_NAME=us-east-1
+    ```
+  </Step>
+
+  <Step title="Start All Services">
+    Launch Attendee and all supporting services:
+
+    ```bash
+    docker compose -f dev.docker-compose.yaml up
+    ```
+
+    This starts:
+    - `attendee-app-local` - Django web server (port 8000)
+    - `attendee-worker-local` - Celery worker for background tasks
+    - `attendee-scheduler-local` - Task scheduler
+    - `postgres` - PostgreSQL database
+    - `redis` - Redis message broker
+  </Step>
+
+  <Step title="Run Database Migrations">
+    In a new terminal, run Django migrations:
+
+    ```bash
+    docker compose -f dev.docker-compose.yaml exec attendee-app-local python manage.py migrate
+    ```
+  </Step>
+
+  <Step title="Create Your Account">
+    1. Open your browser to `http://localhost:8000`
+    2. Click "Sign Up" and create an account
+    3. Look for the confirmation link in the server logs:
+
+    ```
+    http://localhost:8000/accounts/confirm-email/<key>/
+    ```
+
+    4. Paste the confirmation link into your browser
+    5. Log in with your credentials
+  </Step>
+
+  <Step title="Configure API Credentials">
+    1. Navigate to **Settings** in the sidebar
+    2. Enter your **Zoom OAuth credentials**
+    3. Enter your **Deepgram API key**
+    4. Navigate to **API Keys** in the sidebar
+    5. Generate your Attendee API key
+  </Step>
+</Steps>
+
+<Note>
+In development mode, direct all API calls to `http://localhost:8000` instead of `https://app.attendee.dev`.
+</Note>
+
+## Webpage Streamer (Optional)
+
+For advanced use cases involving streaming arbitrary web content into meetings:
+
+```bash
+docker compose -f dev.docker-compose.yaml --profile webpage-streamer up
+```
+
+This starts the webpage streamer service on port 8001.
+
+<Warning>
+The webpage streamer requires additional Chrome security configuration and may require elevated privileges.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="sliders" href="/self-hosting/configuration">
+    Learn about environment variables and advanced configuration options
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/self-hosting/deployment">
+    Deploy Attendee to production with Docker or Kubernetes
+  </Card>
+</CardGroup>

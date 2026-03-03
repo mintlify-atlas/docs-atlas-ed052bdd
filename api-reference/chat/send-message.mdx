@@ -1,0 +1,89 @@
+---
+title: Send Chat Message
+api: POST /api/v1/bots/{object_id}/send_chat_message
+---
+
+Causes the bot to send a chat message in the meeting.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Request Body
+
+<ParamField body="message" type="string" required>
+  The message text to send. Currently does not support emojis. For Microsoft Teams, you can use basic HTML tags including `<p>`, `<br>`, `<b>`, `<i>`, and `<a>`.
+</ParamField>
+
+<ParamField body="to" type="string" default="everyone">
+  Who to send the message to. Options:
+  - `everyone` - Send to all participants
+  - `specific_user` - Send to a specific user (requires `to_user_uuid`)
+  - `everyone_but_host` - Send to all participants except the host
+</ParamField>
+
+<ParamField body="to_user_uuid" type="string">
+  The UUID of the user to send the message to. Required when `to` is set to `specific_user`.
+</ParamField>
+
+## Response
+
+Returns a 200 status code when the chat message request is successfully created.
+
+## Example Request - Everyone
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/send_chat_message \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "everyone",
+    "message": "Hello everyone, I am here to record and summarize this meeting."
+  }'
+```
+
+## Example Request - Specific User
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/send_chat_message \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "specific_user",
+    "to_user_uuid": "123e4567-e89b-12d3-a456-426614174000",
+    "message": "Hello Bob, I am here to record and summarize this meeting."
+  }'
+```
+
+## Example Request - Teams with HTML
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/send_chat_message \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "everyone",
+    "message": "<p><b>Meeting Bot</b></p><p>Recording in progress. Visit <a href=\"https://example.com\">dashboard</a> for details.</p>"
+  }'
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when:
+- Missing required fields
+- Invalid `to` value
+- `to_user_uuid` missing when `to` is `specific_user`
+
+### 404 Not Found
+Returned when the bot ID does not exist.
+
+<Note>
+  The bot must be actively in a meeting to send chat messages. Messages are sent through the meeting platform's native chat interface.
+</Note>

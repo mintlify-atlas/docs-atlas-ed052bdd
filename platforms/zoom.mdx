@@ -1,0 +1,167 @@
+---
+title: 'Zoom'
+description: 'Zoom-specific features, setup, and integration options'
+---
+
+Attendee provides comprehensive support for Zoom meetings through two integration methods: the Zoom Meeting SDK (traditional bots) and Zoom Realtime Media Streams (RTMS).
+
+## Integration Methods
+
+Attendee supports two ways to integrate with Zoom:
+
+### Meeting SDK Bots
+
+Traditional meeting bots that join as visible participants using the Zoom Meeting SDK. This is the most common integration method.
+
+**Capabilities:**
+- Join and leave meetings
+- Audio and video recording
+- Real-time transcription
+- Send and receive chat messages
+- Audio and video input/output
+- Screen sharing capture
+- Per-participant audio streams
+- Custom bot image
+- Speech output
+
+**Limitations:**
+- Appears as a visible participant in the meeting
+- Requires On Behalf Of (OBF) token for external meetings after March 2, 2026
+
+### Zoom RTMS (Realtime Media Streams)
+
+A Zoom-native data pipeline that streams meeting data directly to your application without adding a visible participant.
+
+**Capabilities:**
+- Access live audio, video, transcript, and screenshare data
+- No visible bot participant in the meeting
+- Lower CPU usage (encoded video frames)
+- No OBF token required
+
+**Limitations:**
+- Receive-only (cannot send audio/video/chat back to meeting)
+- User controls when the app connects
+- Requires host to have RTMS enabled
+
+See the [RTMS guide](/platforms/zoom-rtms) for implementation details.
+
+## Prerequisites
+
+To use Attendee with Zoom, you need:
+
+<Steps>
+  <Step title="Attendee API Key">
+    Create an account in your Attendee instance and navigate to the 'API Keys' section in the sidebar.
+  </Step>
+  
+  <Step title="Zoom OAuth Credentials">
+    Obtain your Zoom app Client ID and Client Secret. See the setup guide below.
+  </Step>
+  
+  <Step title="Deepgram API Key">
+    Required for transcription. Sign up at [Deepgram](https://console.deepgram.com/signup) for 400 hours of free transcription.
+  </Step>
+</Steps>
+
+## Zoom App Setup
+
+<Steps>
+  <Step title="Create Zoom App">
+    Navigate to [Zoom Marketplace](https://marketplace.zoom.us/), log into your developer account, click "Develop" → "Build App" → "General App".
+  </Step>
+  
+  <Step title="Get Credentials">
+    Copy the Client ID and Client Secret from the 'App Credentials' section.
+  </Step>
+  
+  <Step title="Enable Meeting SDK">
+    Go to Features → Embed, then toggle the Meeting SDK option.
+  </Step>
+  
+  <Step title="Configure in Attendee">
+    Enter your Zoom OAuth credentials and Deepgram API key in the Attendee UI under Settings → Credentials.
+  </Step>
+</Steps>
+
+<Note>
+  For detailed setup instructions with video walkthrough, see the [Zoom developer guide](https://developers.zoom.us/docs/meeting-sdk/developer-accounts/).
+</Note>
+
+## Advanced Features
+
+### Managed Zoom OAuth
+
+Attendee can manage your users' Zoom OAuth credentials to enable advanced capabilities:
+
+- **Local Recording Token**: Record meetings without host permission
+- **On Behalf Of (OBF) Token**: Required for external meetings after March 2, 2026
+
+<Warning>
+  Starting March 2, 2026, all bots joining external Zoom meetings must use the On Behalf Of (OBF) token. Plan your OAuth implementation accordingly.
+</Warning>
+
+**Implementation:**
+1. Create a Zoom OAuth App with required scopes
+2. Register the app with Attendee
+3. Implement OAuth flow in your application
+4. Pass `zoom_settings.onbehalf_token.zoom_oauth_connection_user_id` when launching bots
+
+See the [Attendee-managed Zoom OAuth guide](/integrations/zoom-oauth) for complete implementation details.
+
+### Zoom Tokens
+
+If you prefer to manage OAuth credentials yourself, pass tokens directly when creating a bot:
+
+```json
+{
+  "meeting_url": "https://zoom.us/j/...",
+  "callback_settings": {
+    "zoom_tokens_url": "https://your-app.com/api/zoom-tokens"
+  }
+}
+```
+
+Supported token types:
+- ZAK token (Zoom Access Key)
+- Join token for local recording
+- On Behalf Of (OBF) token
+
+### Breakout Rooms
+
+Zoom bots can join and navigate breakout rooms automatically. Configure behavior using the `automatic_leave_settings` parameter.
+
+### Waiting Rooms
+
+Bots will wait in the waiting room until admitted by the host. Configure timeout behavior to control how long bots wait before leaving.
+
+## Platform-Specific Settings
+
+When creating a bot, use `zoom_settings` to configure Zoom-specific behavior:
+
+```json
+{
+  "meeting_url": "https://zoom.us/j/...",
+  "zoom_settings": {
+    "onbehalf_token": {
+      "zoom_oauth_connection_user_id": "user123"
+    }
+  }
+}
+```
+
+## Known Limitations
+
+<Warning>
+  The Zoom Linux SDK has a bug where incorrect meeting passwords cause the bot to get stuck in "connecting" state. Attendee implements a 60-second timeout to detect this condition.
+</Warning>
+
+- Breakout room navigation may have delays when switching between rooms
+- Virtual camera initialization requires proper frame size configuration
+- Some features require specific SDK versions
+
+## Resources
+
+- [Zoom Meeting SDK Documentation](https://developers.zoom.us/docs/meeting-sdk/)
+- [Zoom OAuth Guide](/integrations/zoom-oauth)
+- [Zoom RTMS Guide](/platforms/zoom-rtms)
+- [Example: Managed Zoom OAuth](https://github.com/attendee-labs/managed-zoom-oauth-example)

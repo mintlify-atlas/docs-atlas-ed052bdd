@@ -1,0 +1,114 @@
+---
+title: Get Participant Events
+api: GET /api/v1/bots/{object_id}/participant_events
+---
+
+Returns participant events (join/leave) for a bot. Results are paginated using cursor pagination.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination. Use the `next` value from the previous response to get the next page.
+</ParamField>
+
+<ParamField query="after" type="string">
+  Only return participant events created after this time. Useful when polling for updates. Format: ISO 8601 datetime (e.g., `2024-01-18T12:34:56Z`)
+</ParamField>
+
+<ParamField query="before" type="string">
+  Only return participant events created before this time. Format: ISO 8601 datetime (e.g., `2024-01-18T13:34:56Z`)
+</ParamField>
+
+## Response
+
+<ResponseField name="next" type="string | null">
+  URL for the next page of results, or null if no more results
+</ResponseField>
+
+<ResponseField name="previous" type="string | null">
+  URL for the previous page of results, or null if on first page
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of participant event objects
+</ResponseField>
+
+### Participant Event Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the event
+</ResponseField>
+
+<ResponseField name="participant_name" type="string">
+  Name of the participant
+</ResponseField>
+
+<ResponseField name="participant_uuid" type="string">
+  UUID of the participant
+</ResponseField>
+
+<ResponseField name="participant_user_uuid" type="string | null">
+  User UUID (platform-specific persistent identifier)
+</ResponseField>
+
+<ResponseField name="participant_is_host" type="boolean">
+  Whether the participant is the meeting host
+</ResponseField>
+
+<ResponseField name="event_type" type="string">
+  Type of event (e.g., 'join', 'leave')
+</ResponseField>
+
+<ResponseField name="event_data" type="object">
+  Additional data about the event
+</ResponseField>
+
+<ResponseField name="timestamp_ms" type="integer">
+  Timestamp of the event in milliseconds
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participant_events \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Time Range
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participant_events?after=2024-01-18T12:34:56Z&before=2024-01-18T13:34:56Z" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Polling
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participant_events?after=2024-01-18T12:34:56Z" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Pagination
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/participant_events?cursor=cD00ODY%3D" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+<Tip>
+  Use the `after` parameter to poll for new participant events. This is useful for tracking when participants join or leave during an ongoing meeting.
+</Tip>

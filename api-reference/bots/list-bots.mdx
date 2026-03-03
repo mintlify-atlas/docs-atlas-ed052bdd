@@ -1,0 +1,170 @@
+---
+title: List Bots
+description: Returns a paginated list of bots for your project
+---
+
+## Endpoint
+
+```
+GET /api/v1/bots
+```
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+<ParamField header="Authorization" type="string" required>
+  Your API key in the format: `Token YOUR_API_KEY_HERE`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination. Use the cursor returned in the response to fetch the next page.
+</ParamField>
+
+<ParamField query="meeting_url" type="string">
+  Filter bots by meeting URL.
+  
+  Example: `https://zoom.us/j/123456789`
+</ParamField>
+
+<ParamField query="deduplication_key" type="string">
+  Filter bots by deduplication key.
+  
+  Example: `my-unique-bot-key`
+</ParamField>
+
+<ParamField query="states" type="array">
+  Filter bots by state. Can specify multiple states.
+  
+  Possible values: `ready`, `joining`, `joined_not_recording`, `joined_recording`, `leaving`, `post_processing`, `fatal_error`, `waiting_room`, `ended`, `data_deleted`, `scheduled`, `staged`, `joined_recording_paused`, `joining_breakout_room`, `leaving_breakout_room`, `joined_recording_permission_denied`
+</ParamField>
+
+<ParamField query="join_at_after" type="string">
+  Only return bots with `join_at` after this time.
+  
+  Format: ISO 8601 datetime (e.g., `2024-01-18T12:34:56Z`)
+</ParamField>
+
+<ParamField query="join_at_before" type="string">
+  Only return bots with `join_at` before this time.
+  
+  Format: ISO 8601 datetime (e.g., `2024-01-18T13:34:56Z`)
+</ParamField>
+
+## Response
+
+Returns a paginated list of bot objects.
+
+<ResponseField name="next" type="string">
+  Cursor URL for the next page of results, or `null` if no more results.
+</ResponseField>
+
+<ResponseField name="previous" type="string">
+  Cursor URL for the previous page of results, or `null` if on first page.
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of bot objects.
+  
+  <ResponseField name="id" type="string">
+    Unique identifier for the bot (e.g., `bot_weIAju4OXNZkDTpZ`)
+  </ResponseField>
+  
+  <ResponseField name="meeting_url" type="string">
+    The URL of the meeting the bot joined or will join.
+  </ResponseField>
+  
+  <ResponseField name="state" type="string">
+    Current state of the bot.
+  </ResponseField>
+  
+  <ResponseField name="events" type="array">
+    Array of events that have occurred for this bot.
+    
+    <ResponseField name="type" type="string">
+      Event type (e.g., `join_requested`, `joined_meeting`, `leave_requested`)
+    </ResponseField>
+    
+    <ResponseField name="sub_type" type="string | null">
+      Event sub-type with additional context.
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when the event occurred.
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="transcription_state" type="string">
+    Current transcription state (e.g., `not_started`, `in_progress`, `complete`)
+  </ResponseField>
+  
+  <ResponseField name="recording_state" type="string">
+    Current recording state (e.g., `not_started`, `in_progress`, `complete`)
+  </ResponseField>
+  
+  <ResponseField name="join_at" type="string">
+    ISO 8601 timestamp when the bot joined or will join the meeting.
+  </ResponseField>
+  
+  <ResponseField name="deduplication_key" type="string">
+    Optional deduplication key for the bot.
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="object">
+    Custom metadata associated with the bot.
+  </ResponseField>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET 'https://api.attendee.dev/api/v1/bots?states=joined_recording&meeting_url=https://zoom.us/j/123456789' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json'
+```
+
+## Example Response
+
+```json
+{
+  "next": "https://api.attendee.dev/api/v1/bots?cursor=cD00ODY%3D",
+  "previous": null,
+  "results": [
+    {
+      "id": "bot_weIAju4OXNZkDTpZ",
+      "meeting_url": "https://zoom.us/j/123?pwd=456",
+      "state": "joined_recording",
+      "events": [
+        {
+          "type": "join_requested",
+          "sub_type": null,
+          "created_at": "2024-01-18T12:34:56Z"
+        },
+        {
+          "type": "joined_meeting",
+          "sub_type": null,
+          "created_at": "2024-01-18T12:35:00Z"
+        }
+      ],
+      "transcription_state": "in_progress",
+      "recording_state": "in_progress",
+      "join_at": "2024-01-18T12:34:56Z",
+      "deduplication_key": "my-unique-bot-key",
+      "metadata": {
+        "customer_id": "abc123"
+      }
+    }
+  ]
+}
+```
+
+## Error Codes
+
+- `400` - Invalid request parameters (e.g., invalid state, invalid date format)
+- `401` - Invalid or missing API key

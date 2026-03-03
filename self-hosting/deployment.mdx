@@ -1,0 +1,690 @@
+---
+title: 'Deployment'
+description: 'Production deployment options for Attendee'
+---
+
+## Overview
+
+Attendee can be deployed using various methods depending on your infrastructure requirements. This guide covers Docker-based deployments, Kubernetes, and best practices for production.
+
+## Docker Deployment
+
+### Building the Production Image
+
+The multi-stage Dockerfile optimizes the image for production:
+
+```bash
+# Build the production image
+docker build -t attendee:latest .
+```
+
+#### Dockerfile Stages
+
+The build process uses three stages:
+
+<Steps>
+  <Step title="Base Stage">
+    Installs system dependencies, Chrome, PulseAudio, and media processing libraries.
+
+    Key dependencies:
+    - Ubuntu 22.04 (amd64)
+    - Google Chrome 134.0.6998.88
+    - ChromeDriver 134.0.6998.88
+    - PulseAudio, ALSA, FFmpeg
+    - OpenCV, GStreamer
+  </Step>
+
+  <Step title="Dependencies Stage">
+    Installs Python dependencies from `requirements.txt`.
+
+    - Adds Tini as init system
+    - Caches Python packages for faster rebuilds
+  </Step>
+
+  <Step title="Build Stage">
+    Creates non-root user and sets up the application.
+
+    - Creates `app` user (UID 1000)
+    - Sets proper file permissions
+    - Configures Chrome policies symlink
+    - Sets entrypoint script
+  </Step>
+</Steps>
+
+### Production Docker Compose
+
+Create a `docker-compose.yaml` for production:
+
+```yaml docker-compose.yaml
+version: '3.8'
+
+services:
+  attendee-app:
+    image: attendee:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=attendee.settings.production
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+    command: gunicorn attendee.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - attendee_network
+
+  attendee-worker:
+    image: attendee:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=attendee.settings.production
+      - SECRET_KEY=${SECRET_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+      - ENABLE_CHROME_SANDBOX=false
+    command: celery -A attendee worker -l INFO --concurrency=4
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - attendee_network
+
+  attendee-scheduler:
+    image: attendee:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=attendee.settings.production
+      - SECRET_KEY=${SECRET_KEY}
+    command: python manage.py run_scheduler
+    entrypoint: []
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - attendee_network
+
+  postgres:
+    image: postgres:15.3-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - attendee_network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - attendee_network
+
+networks:
+  attendee_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+### Starting Production Services
+
+<Steps>
+  <Step title="Create Environment File">
+    Create a `.env` file with production variables:
+
+    ```bash .env
+    SECRET_KEY=your_production_secret_key
+    ALLOWED_HOSTS=attendee.yourdomain.com
+    POSTGRES_DB=attendee_production
+    POSTGRES_USER=attendee_user
+    POSTGRES_PASSWORD=secure_password_here
+    AWS_ACCESS_KEY_ID=your_key
+    AWS_SECRET_ACCESS_KEY=your_secret
+    AWS_STORAGE_BUCKET_NAME=attendee-production
+    ```
+
+    <Warning>
+    Never commit the `.env` file to version control. Add it to `.gitignore`.
+    </Warning>
+  </Step>
+
+  <Step title="Run Database Migrations">
+    Before starting services, run migrations:
+
+    ```bash
+    docker compose run --rm attendee-app python manage.py migrate
+    ```
+  </Step>
+
+  <Step title="Collect Static Files">
+    Collect Django static files:
+
+    ```bash
+    docker compose run --rm attendee-app python manage.py collectstatic --noinput
+    ```
+  </Step>
+
+  <Step title="Start Services">
+    Launch all services in detached mode:
+
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step title="Create Superuser">
+    Create an admin user:
+
+    ```bash
+    docker compose exec attendee-app python manage.py createsuperuser
+    ```
+  </Step>
+</Steps>
+
+### Health Checks
+
+Monitor service health:
+
+```bash
+# Check running containers
+docker compose ps
+
+# View logs
+docker compose logs -f attendee-app
+docker compose logs -f attendee-worker
+
+# Check Celery workers
+docker compose exec attendee-worker celery -A attendee inspect active
+```
+
+## Kubernetes Deployment
+
+For production deployments at scale, Kubernetes provides orchestration and high availability.
+
+### Kubernetes Manifests
+
+#### Namespace
+
+```yaml namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: attendee
+```
+
+#### ConfigMap
+
+```yaml configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: attendee-config
+  namespace: attendee
+data:
+  POSTGRES_HOST: "postgres"
+  REDIS_URL: "redis://redis:6379/0"
+  DJANGO_SETTINGS_MODULE: "attendee.settings.production"
+  ENABLE_CHROME_SANDBOX: "false"
+```
+
+#### Secret
+
+```bash
+# Create secret from .env file
+kubectl create secret generic attendee-secrets \
+  --from-literal=SECRET_KEY=your_secret_key \
+  --from-literal=POSTGRES_PASSWORD=your_db_password \
+  --from-literal=AWS_ACCESS_KEY_ID=your_aws_key \
+  --from-literal=AWS_SECRET_ACCESS_KEY=your_aws_secret \
+  -n attendee
+```
+
+#### Deployment
+
+```yaml deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attendee-app
+  namespace: attendee
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: attendee-app
+  template:
+    metadata:
+      labels:
+        app: attendee-app
+    spec:
+      containers:
+      - name: attendee
+        image: attendee:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: attendee-config
+        - secretRef:
+            name: attendee-secrets
+        command: ["gunicorn"]
+        args:
+        - "attendee.wsgi:application"
+        - "--bind"
+        - "0.0.0.0:8000"
+        - "--workers"
+        - "4"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+#### Worker Deployment
+
+```yaml worker-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attendee-worker
+  namespace: attendee
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: attendee-worker
+  template:
+    metadata:
+      labels:
+        app: attendee-worker
+    spec:
+      containers:
+      - name: worker
+        image: attendee:latest
+        envFrom:
+        - configMapRef:
+            name: attendee-config
+        - secretRef:
+            name: attendee-secrets
+        command: ["celery"]
+        args:
+        - "-A"
+        - "attendee"
+        - "worker"
+        - "-l"
+        - "INFO"
+        - "--concurrency=2"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "4000m"
+```
+
+#### Service
+
+```yaml service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: attendee-app
+  namespace: attendee
+spec:
+  selector:
+    app: attendee-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: LoadBalancer
+```
+
+<Note>
+The Kubernetes dependency for managing resources is included in `requirements.txt` (kubernetes==32.0.0).
+</Note>
+
+## Reverse Proxy Setup
+
+### NGINX Configuration
+
+Use NGINX as a reverse proxy:
+
+```nginx nginx.conf
+upstream attendee {
+    server localhost:8000;
+}
+
+server {
+    listen 80;
+    server_name attendee.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name attendee.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/attendee.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/attendee.yourdomain.com/privkey.pem;
+
+    client_max_body_size 100M;
+
+    location / {
+        proxy_pass http://attendee;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /static/ {
+        alias /var/www/attendee/staticfiles/;
+    }
+
+    location /ws/ {
+        proxy_pass http://attendee;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+## Database Management
+
+### Backups
+
+Automate PostgreSQL backups:
+
+```bash
+# Backup database
+docker compose exec postgres pg_dump -U attendee_user attendee_production > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore database
+cat backup.sql | docker compose exec -T postgres psql -U attendee_user attendee_production
+```
+
+### Migrations
+
+Run migrations safely:
+
+```bash
+# Check migration status
+docker compose exec attendee-app python manage.py showmigrations
+
+# Run migrations
+docker compose exec attendee-app python manage.py migrate
+
+# Rollback migration (if needed)
+docker compose exec attendee-app python manage.py migrate app_name migration_name
+```
+
+## Monitoring & Logging
+
+### Log Aggregation
+
+Configure structured logging:
+
+```bash
+# Enable JSON logging
+JSON_LOGGING=true
+LOG_LEVEL=INFO
+```
+
+View logs:
+
+```bash
+# Application logs
+docker compose logs -f attendee-app
+
+# Worker logs
+docker compose logs -f attendee-worker
+
+# Follow all logs
+docker compose logs -f
+```
+
+### Metrics & Health Checks
+
+Monitor service health:
+
+```bash
+# Check application health
+curl https://attendee.yourdomain.com/health/
+
+# Check Celery worker status
+docker compose exec attendee-worker celery -A attendee inspect stats
+
+# Check Redis connection
+docker compose exec redis redis-cli ping
+```
+
+## Scaling Considerations
+
+<Steps>
+  <Step title="Horizontal Scaling">
+    Scale workers based on load:
+
+    ```bash
+    # Scale up workers
+    docker compose up -d --scale attendee-worker=5
+
+    # Kubernetes scaling
+    kubectl scale deployment attendee-worker --replicas=5 -n attendee
+    ```
+  </Step>
+
+  <Step title="Database Performance">
+    - Use connection pooling (built-in with Django)
+    - Consider read replicas for high read loads
+    - Use managed database services (RDS, Cloud SQL) for automatic scaling
+  </Step>
+
+  <Step title="Redis Optimization">
+    - Use Redis persistence (AOF or RDB)
+    - Consider Redis Cluster for high availability
+    - Monitor memory usage and eviction policies
+  </Step>
+
+  <Step title="Media Storage">
+    - Use CDN for static files (CloudFront, Cloudflare)
+    - Implement S3 lifecycle policies for old recordings
+    - Consider multiple regions for global access
+  </Step>
+</Steps>
+
+## Security Hardening
+
+<Warning>
+Follow these security practices for production deployments:
+</Warning>
+
+### Container Security
+
+- **Run as non-root**: Attendee already runs as `app` user (UID 1000)
+- **Read-only filesystem**: Mount volumes as read-only where possible
+- **Resource limits**: Set CPU and memory limits to prevent resource exhaustion
+- **Security scanning**: Regularly scan images for vulnerabilities
+
+### Network Security
+
+```yaml
+# Docker compose network isolation
+networks:
+  attendee_network:
+    driver: bridge
+    internal: false
+```
+
+- Use firewall rules to restrict access
+- Enable VPC/network policies in Kubernetes
+- Use TLS for all external communication
+
+### Secrets Management
+
+- Use secret management tools (AWS Secrets Manager, HashiCorp Vault)
+- Rotate credentials regularly
+- Never log sensitive information
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Chrome Crashes in Container">
+    **Problem**: Chrome crashes with "No usable sandbox" error.
+
+    **Solution**: Disable Chrome sandbox in containers:
+    ```bash
+    ENABLE_CHROME_SANDBOX=false
+    ```
+
+    Alternatively, use the provided seccomp profile:
+    ```yaml
+    security_opt:
+      - seccomp=./bots/web_bot_adapter/chrome_seccomp.json
+    ```
+  </Accordion>
+
+  <Accordion title="PulseAudio Not Starting">
+    **Problem**: Audio processing fails with PulseAudio errors.
+
+    **Solution**: The `entrypoint.sh` script handles PulseAudio initialization. Verify:
+    - XDG_RUNTIME_DIR is writable
+    - User permissions are correct
+
+    Enable debug mode:
+    ```bash
+    PA_DEBUG=1
+    ```
+  </Accordion>
+
+  <Accordion title="Worker Not Processing Tasks">
+    **Problem**: Celery worker not picking up tasks.
+
+    **Solution**: Check Redis connection and worker logs:
+    ```bash
+    # Verify Redis connection
+    docker compose exec redis redis-cli ping
+
+    # Check worker status
+    docker compose exec attendee-worker celery -A attendee inspect active
+
+    # Check worker logs
+    docker compose logs attendee-worker
+    ```
+  </Accordion>
+
+  <Accordion title="Database Connection Errors">
+    **Problem**: Cannot connect to PostgreSQL.
+
+    **Solution**: Verify:
+    - PostgreSQL is running: `docker compose ps postgres`
+    - Credentials are correct in `.env`
+    - Network connectivity: `docker compose exec attendee-app ping postgres`
+  </Accordion>
+</AccordionGroup>
+
+## Updates & Maintenance
+
+### Updating Attendee
+
+<Steps>
+  <Step title="Pull Latest Changes">
+    ```bash
+    git pull origin main
+    ```
+  </Step>
+
+  <Step title="Rebuild Image">
+    ```bash
+    docker compose build
+    ```
+  </Step>
+
+  <Step title="Stop Services">
+    ```bash
+    docker compose down
+    ```
+  </Step>
+
+  <Step title="Run Migrations">
+    ```bash
+    docker compose run --rm attendee-app python manage.py migrate
+    ```
+  </Step>
+
+  <Step title="Restart Services">
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+</Steps>
+
+### Zero-Downtime Updates
+
+For production, use rolling updates:
+
+```bash
+# Kubernetes rolling update
+kubectl set image deployment/attendee-app attendee=attendee:v2.0 -n attendee
+kubectl rollout status deployment/attendee-app -n attendee
+
+# Rollback if needed
+kubectl rollout undo deployment/attendee-app -n attendee
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup" icon="wrench" href="/self-hosting/setup">
+    Return to setup guide
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/self-hosting/configuration">
+    Learn more about configuration options
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Explore the Attendee API
+  </Card>
+  <Card title="Community" icon="users" href="https://join.slack.com/t/attendee-community/shared_invite/zt-3l43ns8cl-G8YnMccWVTugMlloUtSf9g">
+    Join the Slack community
+  </Card>
+</CardGroup>

@@ -1,0 +1,163 @@
+---
+title: 'Supported Platforms'
+description: 'Overview of meeting platforms supported by Attendee'
+---
+
+## Overview
+
+Attendee bots can join meetings on three major video conferencing platforms: Zoom, Google Meet, and Microsoft Teams. Each platform has unique characteristics and requirements.
+
+## Zoom
+
+### How Zoom Bots Work
+
+Zoom bots use the [Zoom Meeting SDK](https://developers.zoom.us/docs/meeting-sdk/) to join meetings as virtual participants. The SDK provides access to audio and video streams, allowing bots to record, transcribe, and interact with meetings.
+
+<Info>
+  Zoom provides the most mature and feature-rich SDK for meeting bots, with advanced capabilities like per-participant audio streams.
+</Info>
+
+### Requirements
+
+To join Zoom meetings, you need:
+
+1. **Zoom OAuth Credentials** - Client ID and Client Secret from your Zoom app
+2. **Meeting SDK Enabled** - Enable the Meeting SDK toggle in your Zoom app settings
+
+### Getting Zoom Credentials
+
+<Steps>
+  <Step title="Create Zoom App">
+    Navigate to [Zoom Marketplace](https://marketplace.zoom.us/) and register/log into your developer account. Click "Develop" then "Build App" and choose "General App".
+  </Step>
+  
+  <Step title="Get Credentials">
+    Copy the Client ID and Client Secret from the 'App Credentials' section.
+  </Step>
+  
+  <Step title="Enable Meeting SDK">
+    Go to the Embed tab under Features and select the Meeting SDK toggle.
+  </Step>
+</Steps>
+
+### Zoom-Specific Features
+
+- **Zoom RTMS** - Real-Time Media Streaming for app sessions
+- **ZAK Tokens** - Start meetings with a Zoom user's ZAK token
+- **Join Tokens** - Local recording permissions for specific meetings
+- **Web and Native SDKs** - Choose between web-based or native SDK implementations
+
+## Google Meet
+
+### How Google Meet Bots Work
+
+Google Meet doesn't provide an official SDK for meeting bots. Attendee bots join Google Meet meetings by running a full instance of Google Meet in Chrome, similar to how a human user would join.
+
+<Note>
+  Because Google Meet bots run in Chrome, they require more resources than Zoom bots but provide the same functionality.
+</Note>
+
+### Requirements
+
+To join Google Meet meetings, you may need:
+
+1. **Google Workspace Account** (optional) - For meetings requiring authentication
+2. **Bot Login Credentials** (optional) - Google account credentials if meetings require sign-in
+
+### Google Meet Features
+
+- **Anonymous Join** - Join public meetings without authentication
+- **Authenticated Join** - Use bot login credentials for private meetings
+- **Closed Captions** - Transcribe from Google Meet's native closed captions
+- **Login Modes** - Configure when bots should use login credentials
+
+## Microsoft Teams
+
+### How Teams Bots Work
+
+Similar to Google Meet, Microsoft Teams doesn't provide a dedicated SDK for meeting bots. Attendee bots join Teams meetings by running Teams in a Chrome instance.
+
+### Requirements
+
+To join Microsoft Teams meetings, you may need:
+
+1. **Microsoft Account** (optional) - For meetings requiring authentication
+2. **Bot Login Credentials** (optional) - Microsoft account credentials for private meetings
+
+### Teams Features
+
+- **Public Meeting Join** - Join meetings via public links without authentication
+- **Authenticated Join** - Use bot login credentials for organization-restricted meetings
+- **Teams Closed Captions** - Transcribe from Teams' native closed captions
+- **Login Modes** - Configure when bots should use login credentials
+
+## Platform Comparison
+
+| Feature | Zoom | Google Meet | Microsoft Teams |
+|---------|------|-------------|------------------|
+| Official SDK | ✅ Yes | ❌ No | ❌ No |
+| Audio Recording | ✅ | ✅ | ✅ |
+| Video Recording | ✅ | ✅ | ✅ |
+| Transcription | ✅ | ✅ | ✅ |
+| Speaker View | ✅ | ✅ | ✅ |
+| Gallery View | ✅ | ✅ | ✅ |
+| Anonymous Join | ✅ | ✅ | ✅ |
+| Authenticated Join | ✅ | ✅ | ✅ |
+| Breakout Rooms | ✅ | ❌ | ❌ |
+| Waiting Rooms | ✅ | ✅ | ✅ |
+| Chat Messages | ✅ | ✅ | ✅ |
+| Voice Input | ✅ | ✅ | ✅ |
+| Video Input | ✅ | ✅ | ✅ |
+| Platform Captions | ✅ | ✅ | ✅ |
+
+## Choosing a Platform
+
+When deciding which platform to support:
+
+<CardGroup cols={2}>
+  <Card title="Zoom" icon="video">
+    Best for applications requiring advanced features, per-participant audio streams, or breakout room support.
+  </Card>
+  
+  <Card title="Google Meet" icon="google">
+    Ideal for Google Workspace integrations and organizations primarily using Google's ecosystem.
+  </Card>
+  
+  <Card title="Microsoft Teams" icon="microsoft">
+    Best for enterprise customers heavily invested in the Microsoft 365 ecosystem.
+  </Card>
+  
+  <Card title="All Platforms" icon="layer-group">
+    Support all three platforms to maximize compatibility and reach the widest audience.
+  </Card>
+</CardGroup>
+
+## Technical Considerations
+
+### Resource Requirements
+
+- **Zoom bots** (native SDK) - Lower resource usage, more efficient
+- **Google Meet bots** - Higher resource usage (Chrome-based)
+- **Teams bots** - Higher resource usage (Chrome-based)
+
+### Authentication Complexity
+
+- **Zoom** - OAuth app setup required, but well-documented
+- **Google Meet** - Optional authentication, straightforward for public meetings
+- **Teams** - Optional authentication, can be complex for enterprise configurations
+
+<Info>
+  Attendee abstracts platform differences into a unified API, so you can support all platforms without writing platform-specific code.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create a Bot" icon="play" href="/guides/create-bot">
+    Learn how to create your first bot
+  </Card>
+  
+  <Card title="Configure Settings" icon="gear" href="/guides/configuration">
+    Explore bot configuration options
+  </Card>
+</CardGroup>

@@ -1,0 +1,82 @@
+---
+title: Update Voice Agent Settings
+api: PATCH /api/v1/bots/{object_id}/voice_agent_settings
+---
+
+Updates the voice agent settings for a bot. Voice agents allow you to load a website that interacts with the meeting audio through a virtual microphone.
+
+<Info>
+  Learn more about voice agents in the [Voice Agents guide](/guides/voice-agents).
+</Info>
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Request Body
+
+<ParamField body="url" type="string">
+  URL of a website containing a voice agent. The bot will load this website and stream its video and audio to the meeting. The audio from the meeting will be sent to the website via the microphone. The video will be displayed through the bot's webcam. Set to empty string `""` to turn off.
+</ParamField>
+
+<ParamField body="screenshare_url" type="string">
+  Behaves the same as `url`, but the video will be displayed through screenshare instead of the bot's webcam. You cannot provide both `url` and `screenshare_url`. Set to empty string `""` to turn off.
+</ParamField>
+
+## Response
+
+Returns a 200 status code when settings are successfully updated.
+
+## Example Request - Enable Voice Agent
+
+```bash
+curl -X PATCH https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/voice_agent_settings \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://myvoiceagent.example.com"
+  }'
+```
+
+## Example Request - Enable with Screenshare
+
+```bash
+curl -X PATCH https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/voice_agent_settings \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "screenshare_url": "https://myvoiceagent.example.com/screenshare"
+  }'
+```
+
+## Example Request - Disable Voice Agent
+
+```bash
+curl -X PATCH https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/voice_agent_settings \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": ""
+  }'
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when:
+- Invalid URL format
+- Both `url` and `screenshare_url` are provided
+- Bot does not have voice agent resources reserved
+
+### 404 Not Found
+Returned when the bot ID does not exist.
+
+<Warning>
+  If you want to start a voice agent mid-meeting but not at the start, you must set `reserve_resources: true` in the `voice_agent_settings` when creating the bot. Otherwise, this endpoint will fail.
+</Warning>

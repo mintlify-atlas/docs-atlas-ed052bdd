@@ -1,0 +1,170 @@
+---
+title: "List Calendar Events"
+api: "GET /api/v1/calendar_events"
+description: "Returns a list of calendar events for the authenticated project. Results are paginated using cursor pagination."
+---
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Query Parameters
+
+<ParamField query="cursor" type="string">
+  Cursor for pagination
+</ParamField>
+
+<ParamField query="calendar_id" type="string">
+  Filter events by calendar ID
+</ParamField>
+
+<ParamField query="calendar_deduplication_key" type="string">
+  Filter events by calendar deduplication key
+</ParamField>
+
+<ParamField query="event_id" type="string">
+  Filter events by event ID
+</ParamField>
+
+<ParamField query="updated_at_gte" type="string">
+  Filter events updated at or after this timestamp (ISO 8601 format)
+</ParamField>
+
+<ParamField query="updated_after" type="string" deprecated>
+  Deprecated: Use `updated_at_gte` instead. Alias for `updated_at_gte`, kept for backwards compatibility.
+</ParamField>
+
+<ParamField query="start_time_gte" type="string">
+  Filter events with start_time at or after this timestamp (ISO 8601 format)
+</ParamField>
+
+<ParamField query="end_time_lte" type="string">
+  Filter events with end_time at or before this timestamp (ISO 8601 format)
+</ParamField>
+
+<ParamField query="ordering" type="string">
+  Order results by field. Use '-' prefix for descending order. Default: `-updated_at`.
+  
+  Allowed values: `updated_at`, `-updated_at`, `start_time`, `-start_time`, `end_time`, `-end_time`, `created_at`, `-created_at`
+</ParamField>
+
+## Response
+
+<ResponseField name="next" type="string">
+  URL for the next page of results (null if no more results)
+</ResponseField>
+
+<ResponseField name="previous" type="string">
+  URL for the previous page of results (null if on first page)
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of calendar event objects
+  
+  <ResponseField name="id" type="string">
+    Unique identifier for the calendar event
+  </ResponseField>
+  
+  <ResponseField name="calendar_id" type="string">
+    ID of the calendar this event belongs to
+  </ResponseField>
+  
+  <ResponseField name="platform_uuid" type="string">
+    UUID of the event on the calendar platform
+  </ResponseField>
+  
+  <ResponseField name="meeting_url" type="string">
+    Meeting URL for the event (if available)
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Name/title of the event
+  </ResponseField>
+  
+  <ResponseField name="start_time" type="string">
+    Start time of the event (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="end_time" type="string">
+    End time of the event (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="is_deleted" type="boolean">
+    Whether the event has been deleted
+  </ResponseField>
+  
+  <ResponseField name="attendees" type="array">
+    List of attendees with email and name
+  </ResponseField>
+  
+  <ResponseField name="ical_uid" type="string">
+    iCal UID for the event
+  </ResponseField>
+  
+  <ResponseField name="raw" type="object">
+    Raw event data from the calendar platform
+  </ResponseField>
+  
+  <ResponseField name="bots" type="array">
+    Array of bots associated with this event
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Timestamp when the event was created (ISO 8601 format)
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Timestamp when the event was last updated (ISO 8601 format)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url 'https://app.attendee.dev/api/v1/calendar_events?calendar_id=cal_abcdef1234567890&start_time_gte=2025-01-13T10:30:00Z' \
+  --header 'Authorization: Token YOUR_API_KEY_HERE' \
+  --header 'Content-Type: application/json'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "evt_abcdef1234567890",
+      "calendar_id": "cal_abcdef1234567890",
+      "platform_uuid": "google_event_123456789",
+      "meeting_url": "https://meet.google.com/abc-defg-hij",
+      "name": "Team Standup",
+      "start_time": "2025-01-15T14:00:00Z",
+      "end_time": "2025-01-15T15:00:00Z",
+      "is_deleted": false,
+      "attendees": [
+        {
+          "email": "user1@example.com",
+          "name": "John Doe"
+        },
+        {
+          "email": "user2@example.com",
+          "name": "Jane Smith"
+        }
+      ],
+      "ical_uid": "event123@google.com",
+      "raw": {
+        "google_event_data": "..."
+      },
+      "bots": [],
+      "created_at": "2025-01-13T10:30:00.123456Z",
+      "updated_at": "2025-01-13T10:30:00.123456Z"
+    }
+  ]
+}
+```
+
+</ResponseExample>

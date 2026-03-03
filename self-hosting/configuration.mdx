@@ -1,0 +1,318 @@
+---
+title: 'Configuration'
+description: 'Environment variables and configuration options for Attendee'
+---
+
+## Environment Variables
+
+Attendee uses environment variables for configuration. These can be set in a `.env` file or passed directly to the Docker container.
+
+### Required Variables
+
+#### Database Configuration
+
+```bash
+POSTGRES_HOST=postgres
+POSTGRES_DB=attendee_production
+POSTGRES_USER=attendee_user
+POSTGRES_PASSWORD=your_secure_password
+```
+
+<Warning>
+Always use a strong, randomly generated password for production databases.
+</Warning>
+
+#### Redis Configuration
+
+```bash
+REDIS_URL=redis://redis:6379/0
+```
+
+For Redis with authentication:
+```bash
+REDIS_URL=redis://:password@redis:6379/0
+```
+
+#### AWS Storage Configuration
+
+```bash
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_STORAGE_BUCKET_NAME=attendee-media
+AWS_S3_REGION_NAME=us-east-1
+```
+
+<Note>
+Ensure your S3 bucket has appropriate CORS configuration for serving media files.
+</Note>
+
+#### Alternative Storage: Azure Blob Storage
+
+Attendee also supports Azure Blob Storage:
+
+```bash
+AZURE_STORAGE_ACCOUNT_NAME=your_account_name
+AZURE_STORAGE_ACCOUNT_KEY=your_account_key
+AZURE_STORAGE_CONTAINER_NAME=attendee-media
+```
+
+### Django Settings
+
+#### Settings Module
+
+```bash
+# For development
+DJANGO_SETTINGS_MODULE=attendee.settings.development
+
+# For production
+DJANGO_SETTINGS_MODULE=attendee.settings.production
+```
+
+<Warning>
+Never use development settings in production - they disable important security features.
+</Warning>
+
+#### Django Secret Key
+
+```bash
+SECRET_KEY=your_long_random_secret_key_here
+```
+
+Generate a secure secret key:
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+#### Allowed Hosts
+
+```bash
+ALLOWED_HOSTS=attendee.yourdomain.com,www.yourdomain.com
+```
+
+### Chrome & Browser Configuration
+
+#### Chrome Sandbox
+
+```bash
+# Disable for development or containers with limited privileges
+ENABLE_CHROME_SANDBOX=false
+
+# Enable for production (requires proper seccomp profile)
+ENABLE_CHROME_SANDBOX=true
+```
+
+<Note>
+Disabling the Chrome sandbox reduces security but is sometimes necessary in containerized environments.
+</Note>
+
+### Service-Specific Variables
+
+#### Celery Worker Configuration
+
+For the Celery worker service:
+
+```bash
+# Concurrency (number of worker processes)
+CELERY_WORKER_CONCURRENCY=4
+
+# Log level
+CELERY_LOG_LEVEL=INFO
+```
+
+#### PulseAudio Configuration
+
+For audio processing:
+
+```bash
+# Exit idle time (-1 means never exit)
+PA_IDLE_TIME=-1
+
+# Log level (info, debug, etc.)
+PA_LOG_LEVEL=info
+
+# Enable debug output
+PA_DEBUG=0
+```
+
+### Optional Variables
+
+#### Email Configuration
+
+For sending confirmation emails and notifications:
+
+```bash
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_HOST_USER=your_email@example.com
+EMAIL_HOST_PASSWORD=your_email_password
+DEFAULT_FROM_EMAIL=noreply@yourdomain.com
+```
+
+#### Webhook Configuration
+
+```bash
+# Base URL for webhook callbacks
+WEBHOOK_BASE_URL=https://attendee.yourdomain.com
+```
+
+#### Logging Configuration
+
+```bash
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL=INFO
+
+# Enable structured JSON logging
+JSON_LOGGING=true
+```
+
+## Docker Compose Configuration
+
+### Development Compose File
+
+The `dev.docker-compose.yaml` file defines the development environment:
+
+```yaml
+services:
+  attendee-app-local:
+    build: ./
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/5
+      - DJANGO_SETTINGS_MODULE=attendee.settings.development
+    command: python manage.py runserver 0.0.0.0:8000
+
+  attendee-worker-local:
+    build: ./
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/5
+      - DJANGO_SETTINGS_MODULE=attendee.settings.development
+    command: celery -A attendee worker -l INFO
+```
+
+### Service Architecture
+
+Attendee consists of multiple services:
+
+<Steps>
+  <Step title="Web Application">
+    Django web server handling API requests and serving the UI.
+
+    - **Port**: 8000 (default)
+    - **Command**: `python manage.py runserver 0.0.0.0:8000`
+  </Step>
+
+  <Step title="Celery Worker">
+    Background worker processing bot operations and transcriptions.
+
+    - **Command**: `celery -A attendee worker -l INFO`
+    - Handles bot lifecycle, media processing, and API integrations
+  </Step>
+
+  <Step title="Scheduler">
+    Task scheduler for scheduled meetings and maintenance tasks.
+
+    - **Command**: `python manage.py run_scheduler`
+    - Manages scheduled bot joins and cleanup tasks
+  </Step>
+
+  <Step title="Webpage Streamer (Optional)">
+    Dedicated service for streaming web content into meetings.
+
+    - **Port**: 8001 (default)
+    - **Command**: `python bots/webpage_streamer/run_webpage_streamer.py`
+    - Requires Chrome sandbox configuration
+  </Step>
+</Steps>
+
+## Dependencies
+
+Attendee has several key Python dependencies:
+
+### Core Framework
+
+- **Django 5.1.14** - Web framework
+- **Django REST Framework 3.15.2** - API framework
+- **Celery 5.4.0** - Distributed task queue
+- **Gunicorn 23.0.0** - WSGI HTTP server
+
+### Meeting Platform SDKs
+
+- **zoom-meeting-sdk 0.0.24** - Zoom integration
+- **selenium 4.27.1** - Browser automation for Google Meet/Teams
+- **aiortc 1.10.1** - WebRTC for media streams
+
+### Storage & Database
+
+- **psycopg2 2.9.10** - PostgreSQL adapter
+- **redis 5.2.0** - Redis client
+- **boto3 1.35.64** - AWS SDK
+- **azure-storage-blob 12.26.0** - Azure Blob Storage
+
+### Media Processing
+
+- **opencv-python 4.10.0.84** - Video processing
+- **pydub 0.25.1** - Audio manipulation
+- **deepgram-sdk 4.3.0** - Transcription
+- **google-cloud-texttospeech 2.24.0** - Text-to-speech
+
+### Browser Automation
+
+- **google-chrome-stable 134.0.6998.88** - Chrome browser
+- **chromedriver 134.0.6998.88** - Chrome WebDriver
+
+<Note>
+The Dockerfile pins specific versions of Chrome and ChromeDriver to ensure compatibility.
+</Note>
+
+## Chrome Policies
+
+Attendee dynamically configures Chrome policies for meeting bots:
+
+```bash
+# Chrome policies file location
+/etc/opt/chrome/policies/managed/attendee-chrome-policies.json
+```
+
+The file is symlinked to `/tmp/attendee-chrome-policies.json` to allow dynamic updates by the non-root user.
+
+## Static Files
+
+Django static files are collected at startup:
+
+```bash
+# Static files directory
+STATIC_ROOT=/attendee/staticfiles
+STATIC_URL=/static/
+```
+
+The directory is made writable for the non-root `app` user.
+
+## Security Considerations
+
+<Warning>
+Follow these security best practices when configuring Attendee:
+</Warning>
+
+1. **Use Strong Passwords**: Generate cryptographically secure passwords for databases and secret keys
+2. **Enable HTTPS**: Always use TLS/SSL in production
+3. **Restrict ALLOWED_HOSTS**: Only include your actual domain names
+4. **Secure Secrets**: Never commit `.env` files or credentials to version control
+5. **Update Dependencies**: Regularly update Docker images and Python packages
+6. **Network Security**: Use firewalls and security groups to restrict access
+7. **Chrome Sandbox**: Enable the Chrome sandbox in production when possible
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup" icon="wrench" href="/self-hosting/setup">
+    Back to initial setup and prerequisites
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/self-hosting/deployment">
+    Deploy Attendee to production environments
+  </Card>
+</CardGroup>

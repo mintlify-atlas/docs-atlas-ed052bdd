@@ -1,0 +1,107 @@
+---
+title: Update Transcription Settings
+api: PATCH /api/v1/bots/{object_id}/transcription_settings
+---
+
+Updates the transcription settings for a bot. This endpoint is not explicitly defined in the current OpenAPI spec but follows the pattern of other bot settings endpoints.
+
+<Note>
+  This endpoint allows you to modify transcription settings mid-meeting for supported providers.
+</Note>
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Request Body
+
+The transcription settings object supports various providers including Deepgram, Gladia, OpenAI, AssemblyAI, and more.
+
+### Deepgram Settings
+
+<ParamField body="deepgram.language" type="string">
+  Language code for transcription. Defaults to 'multi' for automatic language detection. See [Deepgram docs](https://developers.deepgram.com/docs/models-languages-overview) for available languages.
+</ParamField>
+
+<ParamField body="deepgram.model" type="string">
+  Model to use for transcription. Defaults to 'nova-3'.
+</ParamField>
+
+<ParamField body="deepgram.keyterms" type="array">
+  Array of key terms to improve recall. Only available for nova-3 model in English.
+</ParamField>
+
+<ParamField body="deepgram.redact" type="array">
+  Array of redaction types: `pci`, `pii`, or `numbers`.
+</ParamField>
+
+<ParamField body="deepgram.use_eu_server" type="boolean">
+  Whether to use the EU server for transcription.
+</ParamField>
+
+### OpenAI Settings
+
+<ParamField body="openai.model" type="string" required>
+  OpenAI model: `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, or `gpt-4o-transcribe-diarize`.
+</ParamField>
+
+<ParamField body="openai.language" type="string">
+  ISO-639 language code for transcription.
+</ParamField>
+
+<ParamField body="openai.prompt" type="string">
+  Optional prompt for the transcription.
+</ParamField>
+
+### Meeting Closed Captions
+
+<ParamField body="meeting_closed_captions.google_meet_language" type="string">
+  Language code for Google Meet closed captions (e.g., 'en-US').
+</ParamField>
+
+<ParamField body="meeting_closed_captions.zoom_language" type="string">
+  Language for Zoom closed captions (e.g., 'English', 'Spanish').
+</ParamField>
+
+<ParamField body="meeting_closed_captions.teams_language" type="string">
+  Language code for Teams closed captions (e.g., 'en-us').
+</ParamField>
+
+## Response
+
+Returns a success status when settings are updated.
+
+## Example Request
+
+```bash
+curl -X PATCH https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/transcription_settings \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deepgram": {
+      "language": "en",
+      "model": "nova-3",
+      "keyterms": ["product", "revenue", "KPI"]
+    }
+  }'
+```
+
+## Example with Redaction
+
+```bash
+curl -X PATCH https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/transcription_settings \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deepgram": {
+      "language": "multi",
+      "redact": ["pii", "pci"]
+    }
+  }'
+```

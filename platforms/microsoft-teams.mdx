@@ -1,0 +1,326 @@
+---
+title: 'Microsoft Teams'
+description: 'Microsoft Teams support, features, and implementation details'
+---
+
+Attendee provides support for Microsoft Teams meetings through Chrome-based automation, similar to the Google Meet integration.
+
+## Overview
+
+Microsoft Teams bots use Selenium WebDriver to control a Chrome browser instance that joins the meeting. This approach provides access to meeting features while appearing as a standard participant.
+
+**Platform Type:** Web-based (Chrome automation)
+
+## Capabilities
+
+Microsoft Teams bots support the following features:
+
+- Join and leave meetings
+- Audio and video recording
+- Real-time transcription via closed captions
+- Send and receive chat messages
+- Audio and video input/output
+- Screen sharing capture
+- Custom participant name
+- Video playback into meetings
+
+## Technical Implementation
+
+Microsoft Teams integration is built on top of Attendee's `WebBotAdapter` class:
+
+**Key Components:**
+- `teams_bot_adapter.py` - Main adapter implementation
+- `teams_ui_methods.py` - UI interaction methods
+- `teams_chromedriver_payload.js` - Browser-side JavaScript
+
+**WebSocket Port:** 8097 (dedicated port for Teams communication)
+
+## Setup Requirements
+
+<Steps>
+  <Step title="Attendee API Key">
+    Create an account in your Attendee instance and obtain an API key from Settings → API Keys.
+  </Step>
+  
+  <Step title="Chrome/Chromium Browser">
+    Ensure Chrome or Chromium is installed. This is included by default in Attendee Docker images.
+  </Step>
+  
+  <Step title="Microsoft Account (Optional)">
+    Required for meetings that don't allow guest access.
+  </Step>
+</Steps>
+
+<Note>
+  No Microsoft-specific API credentials are required for basic functionality. Bots can join as guest participants by default.
+</Note>
+
+## Meeting Access
+
+### Guest Access (Default)
+
+By default, Teams bots join as guest participants. This works for:
+- Meetings with guest access enabled
+- Public meetings shared via link
+- External collaboration meetings
+
+### Authenticated Access
+
+For meetings requiring Microsoft account login:
+
+<Steps>
+  <Step title="Configure Credentials">
+    Provide Microsoft account credentials in your bot configuration.
+  </Step>
+  
+  <Step title="Enable Bot Login">
+    Set `use_bot_login: true` in Teams settings when creating the bot.
+  </Step>
+  
+  <Step title="Automatic Retry">
+    Attendee automatically retries with authentication if a meeting requires login and credentials are available.
+  </Step>
+</Steps>
+
+```json
+{
+  "meeting_url": "https://teams.microsoft.com/l/meetup-join/...",
+  "teams_settings": {
+    "use_bot_login": true
+  }
+}
+```
+
+## Closed Captions & Transcription
+
+Microsoft Teams provides native closed captions for transcription:
+
+### Language Configuration
+
+Specify the closed captions language when creating a bot:
+
+```json
+{
+  "meeting_url": "https://teams.microsoft.com/l/meetup-join/...",
+  "teams_settings": {
+    "closed_captions_language": "en-US"
+  }
+}
+```
+
+**Supported Languages:**
+- English (en-US, en-GB, en-AU, etc.)
+- Spanish (es-ES, es-MX, etc.)
+- French (fr-FR, fr-CA)
+- German (de-DE)
+- Portuguese (pt-BR, pt-PT)
+- And more - any language supported by Teams live captions
+
+<Note>
+  Teams' transcription quality and language support may vary based on the meeting organizer's license and region.
+</Note>
+
+## Chat Messages
+
+Microsoft Teams bots can send and receive chat messages with special formatting support:
+
+### Sending Messages
+
+```json
+POST /api/v1/bots/{bot_id}/send_chat_message
+{
+  "message": "Hello from Attendee bot!"
+}
+```
+
+### Rich Text Formatting
+
+The Teams adapter supports HTML formatting in chat messages:
+
+```python
+# Send formatted message
+message = "This is <b>bold</b> and this is <i>italic</i>"
+bot.send_chat_message(message)
+```
+
+**Supported HTML tags:**
+- `<b>` - Bold text
+- `<i>` - Italic text
+- `<br>` - Line breaks
+- Spaces are automatically converted to `&#32;` for proper rendering
+
+<Warning>
+  Teams chat uses a rich text editor that requires special HTML formatting. The adapter automatically handles space encoding and HTML fragment conversion.
+</Warning>
+
+## Video Recording
+
+Enable video recording by modifying the DOM:
+
+```json
+{
+  "meeting_url": "https://teams.microsoft.com/l/meetup-join/...",
+  "teams_settings": {
+    "modify_dom_for_video_recording": true
+  }
+}
+```
+
+<Note>
+  DOM modification optimizes video capture but may alter the meeting UI appearance during recording.
+</Note>
+
+## Sending Media
+
+### Video Playback
+
+Play video files into Teams meetings:
+
+```python
+# Play video once
+bot.send_video("https://example.com/video.mp4", loop=False)
+
+# Loop video continuously
+bot.send_video("https://example.com/video.mp4", loop=True)
+```
+
+The Teams adapter uses blob URLs for video playback optimization:
+
+```javascript
+window.botOutputManager.playVideoWithBlobUrl(videoUrl, loop)
+```
+
+## Platform-Specific Settings
+
+Configure Microsoft Teams-specific behavior:
+
+```json
+{
+  "meeting_url": "https://teams.microsoft.com/l/meetup-join/...",
+  "bot_name": "My Teams Bot",
+  "teams_settings": {
+    "closed_captions_language": "en-US",
+    "modify_dom_for_video_recording": false,
+    "use_bot_login": false
+  },
+  "automatic_leave_settings": {
+    "meeting_empty_timeout_seconds": 300,
+    "meeting_only_bots_timeout_seconds": 120
+  }
+}
+```
+
+## Known Limitations
+
+- **No Official SDK**: Microsoft Teams doesn't provide a public bot SDK for external developers, requiring browser automation
+- **Login Required Meetings**: Meetings requiring Microsoft account login need authenticated bot access
+- **Organization Policies**: Some organizations disable guest access or external participants
+- **Performance**: Chrome automation uses more resources than native SDK implementations
+- **UI Dependencies**: Bot functionality depends on Teams web UI structure
+
+<Warning>
+  Microsoft may update Teams UI at any time, which could temporarily affect bot functionality until Attendee adapts to the changes.
+</Warning>
+
+## Authentication Retry Behavior
+
+Attendee automatically handles login requirements:
+
+1. Bot attempts to join as guest
+2. If login is required and credentials are available:
+   - Bot sets `use_bot_login = true`
+   - Retries joining with authentication
+3. If credentials are not available, bot fails with error
+
+```python
+def should_retry_joining_meeting_that_requires_login_by_logging_in(self):
+    if not self.teams_bot_login_credentials:
+        return False
+    if self.teams_bot_login_should_be_used:
+        return False
+    self.teams_bot_login_should_be_used = True
+    return True
+```
+
+## Automatic Leave Configuration
+
+Configure when bots should automatically leave meetings:
+
+```json
+{
+  "automatic_leave_settings": {
+    "meeting_empty_timeout_seconds": 300,
+    "meeting_only_bots_timeout_seconds": 120,
+    "authorized_user_not_in_meeting_timeout_seconds": 600,
+    "silence_timeout_seconds": 900
+  }
+}
+```
+
+**Parameters:**
+- `meeting_empty_timeout_seconds` - Leave when no participants remain
+- `meeting_only_bots_timeout_seconds` - Leave when only bots are present
+- `authorized_user_not_in_meeting_timeout_seconds` - Wait time for authorized user
+- `silence_timeout_seconds` - Leave after period of no audio activity
+
+## Best Practices
+
+1. **Use clear bot names** - Help participants identify the bot's purpose (e.g., "Recording Bot", "Transcription Assistant")
+2. **Configure appropriate timeouts** - Prevent bots from lingering in empty meetings
+3. **Test guest access** - Verify meeting settings allow guest participants before deployment
+4. **Handle formatting carefully** - Use supported HTML tags when sending formatted chat messages
+5. **Monitor bot health** - Use webhooks to track bot state and handle failures
+6. **Respect privacy** - Clearly communicate when recording or transcription is active
+
+## Troubleshooting
+
+### Bot Cannot Join Meeting
+
+**Possible causes:**
+- Meeting requires Microsoft account login
+- Organization has disabled guest access
+- Meeting link has expired
+- Meeting has reached participant limit
+
+**Solutions:**
+- Enable `use_bot_login` with valid credentials
+- Contact meeting organizer to enable guest access
+- Verify meeting URL is current and valid
+
+### Chat Messages Not Sending
+
+**Possible causes:**
+- Chat input element not found
+- Meeting has disabled chat
+- Bot doesn't have permission to send messages
+
+**Solutions:**
+- Verify chat is enabled in meeting settings
+- Check bot has successfully joined the meeting
+- Review browser console logs for errors
+
+### Captions Not Working
+
+**Possible causes:**
+- Language not supported in meeting region
+- Captions not enabled by meeting organizer
+- Incorrect language code specified
+
+**Solutions:**
+- Verify language code matches Teams-supported languages
+- Ask meeting organizer to enable live captions
+- Use alternative transcription via Deepgram
+
+### Video Quality Issues
+
+**Solutions:**
+- Enable `modify_dom_for_video_recording`
+- Increase browser window size for higher resolution capture
+- Check network bandwidth and stability
+- Verify video codec compatibility
+
+## Resources
+
+- [Teams Bot Adapter Source](https://github.com/attendee-labs/attendee/blob/main/bots/teams_bot_adapter/)
+- [Teams UI Methods](https://github.com/attendee-labs/attendee/blob/main/bots/teams_bot_adapter/teams_ui_methods.py)
+- [WebBotAdapter Base Class](https://github.com/attendee-labs/attendee/blob/main/bots/web_bot_adapter/)

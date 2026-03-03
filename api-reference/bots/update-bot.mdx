@@ -1,0 +1,196 @@
+---
+title: Update Bot
+description: Update a bot's properties
+---
+
+## Endpoint
+
+```
+PATCH /api/v1/bots/{object_id}
+```
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+<ParamField header="Authorization" type="string" required>
+  Your API key in the format: `Token YOUR_API_KEY_HERE`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  The unique identifier for the bot.
+  
+  Example: `bot_xxxxxxxxxxx`
+</ParamField>
+
+## Request Body
+
+<Note>
+The `join_at`, `meeting_url`, `bot_name`, `bot_image`, and `recording_settings` fields can only be updated when the bot is in the `scheduled` state. The `metadata` field can be updated at any time.
+</Note>
+
+<ParamField body="join_at" type="string">
+  The time the bot should join the meeting. Can only be updated for scheduled bots.
+  
+  Format: ISO 8601 datetime (e.g., `2025-06-13T12:00:00Z`)
+</ParamField>
+
+<ParamField body="meeting_url" type="string">
+  The URL of the meeting to join. Can only be updated for scheduled bots.
+</ParamField>
+
+<ParamField body="bot_name" type="string">
+  The name of the bot. Can only be updated for scheduled bots.
+</ParamField>
+
+<ParamField body="bot_image" type="object">
+  The image for the bot's profile picture. Can only be updated for scheduled bots.
+  
+  <ParamField body="type" type="string" required>
+    Image content type. Currently only `image/png` is supported.
+  </ParamField>
+  
+  <ParamField body="data" type="string" required>
+    Base64 encoded PNG image data.
+  </ParamField>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  JSON object containing custom metadata. Can be updated at any time.
+  
+  Example: `{"customer_id": "abc123", "status": "active"}`
+</ParamField>
+
+<ParamField body="recording_settings" type="object">
+  The settings for the bot's recording. Can only be updated for scheduled bots.
+  
+  <ParamField body="format" type="string">
+    Format: `mp4`, `mp3`, or `none`.
+  </ParamField>
+  
+  <ParamField body="view" type="string">
+    View: `speaker_view`, `gallery_view`, or `speaker_view_no_sidebar`.
+  </ParamField>
+  
+  <ParamField body="resolution" type="string">
+    Resolution: `1080p` or `720p`.
+  </ParamField>
+</ParamField>
+
+## Response
+
+Returns the updated bot object.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the bot.
+</ResponseField>
+
+<ResponseField name="meeting_url" type="string">
+  The URL of the meeting the bot will join.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  Current state of the bot.
+</ResponseField>
+
+<ResponseField name="events" type="array">
+  Array of events that have occurred for this bot.
+</ResponseField>
+
+<ResponseField name="transcription_state" type="string">
+  Current transcription state.
+</ResponseField>
+
+<ResponseField name="recording_state" type="string">
+  Current recording state.
+</ResponseField>
+
+<ResponseField name="join_at" type="string">
+  ISO 8601 timestamp when the bot will join the meeting.
+</ResponseField>
+
+<ResponseField name="deduplication_key" type="string">
+  Deduplication key for the bot.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata associated with the bot.
+</ResponseField>
+
+## Example Request - Update join_at for scheduled bot
+
+```bash
+curl -X PATCH 'https://api.attendee.dev/api/v1/bots/bot_xxxxxxxxxxx' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "join_at": "2025-06-13T12:00:00Z"
+  }'
+```
+
+## Example Request - Update name and image
+
+```bash
+curl -X PATCH 'https://api.attendee.dev/api/v1/bots/bot_xxxxxxxxxxx' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "bot_name": "My Updated Bot",
+    "bot_image": {
+      "type": "image/png",
+      "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  }'
+```
+
+## Example Request - Update metadata
+
+```bash
+curl -X PATCH 'https://api.attendee.dev/api/v1/bots/bot_xxxxxxxxxxx' \
+  -H 'Authorization: Token YOUR_API_KEY_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "metadata": {
+      "customer_id": "abc123",
+      "status": "updated"
+    }
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": "bot_xxxxxxxxxxx",
+  "meeting_url": "https://zoom.us/j/123?pwd=456",
+  "state": "scheduled",
+  "events": [
+    {
+      "type": "bot_created",
+      "sub_type": null,
+      "created_at": "2025-06-12T10:00:00Z"
+    }
+  ],
+  "transcription_state": "not_started",
+  "recording_state": "not_started",
+  "join_at": "2025-06-13T12:00:00Z",
+  "deduplication_key": null,
+  "metadata": {
+    "customer_id": "abc123",
+    "status": "updated"
+  }
+}
+```
+
+## Error Codes
+
+- `200` - Bot updated successfully
+- `400` - Invalid input or bot cannot be updated (e.g., trying to update `join_at` for a bot not in `scheduled` state)
+- `401` - Invalid or missing API key
+- `404` - Bot not found

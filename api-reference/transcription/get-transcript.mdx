@@ -1,0 +1,70 @@
+---
+title: Get Transcript
+api: GET /api/v1/bots/{object_id}/transcript
+---
+
+Returns the transcript for a bot. If the meeting is still in progress, this returns the transcript captured so far.
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="updated_after" type="string">
+  Only return transcript entries updated or created after this time. Useful when polling for updates to the transcript. Format: ISO 8601 datetime (e.g., `2024-01-18T12:34:56Z`)
+</ParamField>
+
+## Response
+
+Returns an array of transcript utterances.
+
+<ResponseField name="speaker_name" type="string">
+  Name of the speaker
+</ResponseField>
+
+<ResponseField name="speaker_uuid" type="string">
+  UUID of the speaker
+</ResponseField>
+
+<ResponseField name="speaker_user_uuid" type="string | null">
+  User UUID of the speaker (platform-specific persistent identifier)
+</ResponseField>
+
+<ResponseField name="speaker_is_host" type="boolean">
+  Whether the speaker is the meeting host
+</ResponseField>
+
+<ResponseField name="timestamp_ms" type="integer">
+  Timestamp of the utterance in milliseconds
+</ResponseField>
+
+<ResponseField name="duration_ms" type="integer">
+  Duration of the utterance in milliseconds
+</ResponseField>
+
+<ResponseField name="transcription" type="object">
+  Transcription data for the utterance
+</ResponseField>
+
+## Example Request
+
+```bash
+curl https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/transcript \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Example with Polling
+
+```bash
+curl "https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/transcript?updated_after=2024-01-18T12:34:56Z" \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```

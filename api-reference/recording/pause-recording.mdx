@@ -1,0 +1,52 @@
+---
+title: Pause Recording
+api: POST /api/v1/bots/{object_id}/pause_recording
+---
+
+Pauses the recording for a bot. This functionality is currently in beta and only supported for Google Meet and Microsoft Teams bots.
+
+<Warning>
+  This feature is in beta and only works with Google Meet and Microsoft Teams. Zoom recordings cannot be paused via this endpoint.
+</Warning>
+
+## Authentication
+
+Requires API key authentication via the `Authorization` header.
+
+## Path Parameters
+
+<ParamField path="object_id" type="string" required>
+  Bot ID (e.g., `bot_xxxxxxxxxxx`)
+</ParamField>
+
+## Response
+
+Returns the updated bot object with recording state changed to `paused`.
+
+<ResponseField name="id" type="string">
+  Bot ID
+</ResponseField>
+
+<ResponseField name="recording_state" type="string">
+  Current recording state. Will be `paused` after successful pause.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  Bot state (e.g., `joined_recording_paused`)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://app.attendee.dev/api/v1/bots/bot_weIAju4OXNZkDTpZ/pause_recording \
+  -H "Authorization: Token YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json"
+```
+
+## Error Responses
+
+### 400 Bad Request
+Returned when the bot is not in a valid state to pause recording (e.g., not currently recording).
+
+### 404 Not Found
+Returned when the bot ID does not exist.
