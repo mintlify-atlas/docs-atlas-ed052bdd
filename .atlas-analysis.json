@@ -1,0 +1,173 @@
+{
+  "projectType": "api-service",
+  "projectName": "Attendee",
+  "projectDescription": "The universal Meeting Bot API for managing bots on Zoom, Google Meet, and Microsoft Teams",
+  "theme": "palm",
+  "primaryColor": "#2563eb",
+  "lightColor": "#3b82f6",
+  "darkColor": "#1e40af",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/bots",
+              "concepts/bot-lifecycle",
+              "concepts/platforms"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/transcription",
+              "guides/webhooks",
+              "guides/voice-agents",
+              "guides/realtime-audio",
+              "guides/scheduled-bots",
+              "guides/calendar-integration",
+              "guides/zoom-oauth",
+              "guides/signed-in-bots",
+              "guides/custom-transcription"
+            ]
+          },
+          {
+            "group": "Platform Support",
+            "pages": [
+              "platforms/zoom",
+              "platforms/google-meet",
+              "platforms/microsoft-teams"
+            ]
+          },
+          {
+            "group": "Self-Hosting",
+            "pages": [
+              "self-hosting/setup",
+              "self-hosting/configuration",
+              "self-hosting/deployment"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Bots",
+            "pages": [
+              "api-reference/bots/list-bots",
+              "api-reference/bots/create-bot",
+              "api-reference/bots/get-bot",
+              "api-reference/bots/update-bot",
+              "api-reference/bots/delete-bot",
+              "api-reference/bots/leave-meeting",
+              "api-reference/bots/delete-data"
+            ]
+          },
+          {
+            "group": "Transcription",
+            "pages": [
+              "api-reference/transcription/get-transcript",
+              "api-reference/transcription/transcription-settings"
+            ]
+          },
+          {
+            "group": "Recording",
+            "pages": [
+              "api-reference/recording/get-recording",
+              "api-reference/recording/pause-recording",
+              "api-reference/recording/resume-recording"
+            ]
+          },
+          {
+            "group": "Media Output",
+            "pages": [
+              "api-reference/media/output-audio",
+              "api-reference/media/output-image",
+              "api-reference/media/output-video",
+              "api-reference/media/speech"
+            ]
+          },
+          {
+            "group": "Chat",
+            "pages": [
+              "api-reference/chat/get-messages",
+              "api-reference/chat/send-message"
+            ]
+          },
+          {
+            "group": "Participants",
+            "pages": [
+              "api-reference/participants/list-participants",
+              "api-reference/participants/participant-events"
+            ]
+          },
+          {
+            "group": "Voice Agents",
+            "pages": [
+              "api-reference/voice-agents/voice-agent-settings"
+            ]
+          },
+          {
+            "group": "Calendars",
+            "pages": [
+              "api-reference/calendars/list-calendars",
+              "api-reference/calendars/create-calendar",
+              "api-reference/calendars/get-calendar",
+              "api-reference/calendars/update-calendar",
+              "api-reference/calendars/delete-calendar",
+              "api-reference/calendars/list-events"
+            ]
+          },
+          {
+            "group": "Zoom OAuth",
+            "pages": [
+              "api-reference/zoom-oauth/list-connections",
+              "api-reference/zoom-oauth/create-connection",
+              "api-reference/zoom-oauth/get-connection",
+              "api-reference/zoom-oauth/delete-connection"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Join and manage bots across Zoom, Google Meet, and Microsoft Teams",
+    "Real-time transcription with multiple provider support",
+    "Audio and video recording with customizable settings",
+    "Voice agents integration for AI-powered meeting participants",
+    "Webhooks for real-time event notifications",
+    "Calendar integration for automated bot scheduling",
+    "Speech synthesis and chat message capabilities",
+    "Participant tracking and event monitoring"
+  ],
+  "publicApiSurface": [
+    "POST /api/v1/bots - Create and join meeting bot",
+    "GET /api/v1/bots - List all bots",
+    "GET /api/v1/bots/{id} - Get bot details",
+    "PATCH /api/v1/bots/{id} - Update bot",
+    "DELETE /api/v1/bots/{id} - Delete scheduled bot",
+    "POST /api/v1/bots/{id}/leave - Leave meeting",
+    "GET /api/v1/bots/{id}/transcript - Get meeting transcript",
+    "GET /api/v1/bots/{id}/recording - Get meeting recording",
+    "POST /api/v1/bots/{id}/speech - Send speech to meeting",
+    "GET /api/v1/bots/{id}/chat_messages - Get chat messages",
+    "POST /api/v1/bots/{id}/send_chat_message - Send chat message",
+    "GET /api/v1/bots/{id}/participants - List participants",
+    "GET /api/v1/bots/{id}/participant_events - Get participant events",
+    "POST /api/v1/calendars - Create calendar connection",
+    "GET /api/v1/calendar_events - List calendar events",
+    "POST /api/v1/zoom_oauth_connections - Create Zoom OAuth connection"
+  ]
+}
