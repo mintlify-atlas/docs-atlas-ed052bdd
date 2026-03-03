@@ -1,0 +1,205 @@
+---
+title: Getting Your Zoom App Approved
+description: Step-by-step guide to get your Attendee-powered Zoom app approved for external meetings
+---
+
+<Note>
+This guide was contributed by Frazer Kearl from [MeetDoris](https://meetdoris.com/). Thank you for sharing your experience with the community!
+</Note>
+
+Zoom bots must be approved by Zoom to join external meetings. Unapproved bots can only join meetings hosted by the same Zoom account that owns the bot. This guide walks you through the approval process.
+
+<Info>
+For the official announcement from Zoom about this policy, see [here](https://developers.zoom.us/changelog/platform/meeting-sdk-policy-announcement/).
+</Info>
+
+## Basic Information
+
+For Attendee to function as an anonymous attendee:
+- No Zoom user information is required
+- No OAuth scopes are required
+- You can set the redirect URL to your app's home page (e.g., `/home`, `/dashboard`)
+
+This makes the application process less stringent than it would otherwise be.
+
+## Configuration Steps
+
+### Embed Settings
+
+- Select **Meeting SDK** in your Zoom app configuration
+
+### Scopes
+
+- `user:read:zak` will always be selected automatically
+- You can use this description:
+
+> Our app embeds the Zoom Meeting SDK.  
+> Zoom's Marketplace builder automatically adds the `user_zak:read` scope whenever the Meeting SDK feature is enabled.
+>
+> We do **not** call the `/users/{id}/token?type=zak` endpoint in our current flow.
+>
+> We join meetings with `role = 0` (participant/guest), so a ZAK is never requested or stored.
+>
+> No other Zoom REST APIs are used; no additional scopes are requested.
+>
+> The scope remains in the manifest only because it is required by the Meeting SDK toggle. It enables future host-start functionality without forcing another review, but it is not exercised in production today.
+
+### App Listing
+
+<Warning>
+Your app **does not need to be publicly listed** for Attendee to record external Zoom meetings. Your app just needs to be **approved**.
+</Warning>
+
+You still need to fill out the app listing section and provide images. Once approved:
+- Users don't need to take any action to "approve" your software
+- Once Zoom approves it, it's ready to join external meetings
+
+## Technical Design Section
+
+### Technology Stack
+
+The form says "describe in detail," but for basic Attendee you can keep it high-level. You don't need to list every library—only the major components.
+
+**Example (customize to match your setup):**
+
+- **Frontend:** React 18.3+, Material UI
+- **Backend:** Python 3.11, Flask
+- **Auth:** Auth0 (OIDC)
+- **Data/Storage:** Azure SQL Database
+- **Hosting:** Azure App Service (backend), Azure Static Web Apps (frontend)
+- **CI/CD & Security:** GitHub Actions, CodeQL SAST
+- **Observability:** Azure Application Insights, centralized logging
+- **Zoom Integration:** Zoom Meeting SDK (Web) only; no Zoom REST APIs are used in the Attendee flow
+
+### Architecture Diagram
+
+Submit a high-level architecture diagram showing:
+- Your frontend and backend components
+- How they interact with Attendee
+- How Attendee connects to Zoom meetings
+
+<img src="https://raw.githubusercontent.com/attendee-labs/attendee/refs/heads/main/static/images/zoom_app_review_architecture_diagram_example.png" alt="Example Architecture Diagram" />
+
+### Application Development
+
+<AccordionGroup>
+  <Accordion title="Do you have a Secure Software Development Lifecycle (SSDLC)?">
+    - Select **Yes**
+    - Submit a document detailing your secure development practices:
+      - Requirements gathering
+      - Code reviews
+      - Secrets management
+      - Dependency scanning
+      - Security testing
+  </Accordion>
+
+  <Accordion title="Does your app undergo Static Application Security Testing (SAST)?">
+    - Select **Yes**
+    - Submit a screenshot of your SAST results (e.g., CodeQL analysis from GitHub Actions)
+  </Accordion>
+
+  <Accordion title="Does your app undergo 3rd party penetration testing?">
+    - Select whichever applies
+    - Not required for basic Attendee implementation
+  </Accordion>
+</AccordionGroup>
+
+### Additional Documents
+
+- Submit whatever security documentation you have
+- SOC 2 or ISO 27001 certifications are not required
+- Zoom will refer to excerpts from your privacy policy
+
+## Security Section
+
+<Steps>
+  <Step title="TLS 1.2+ requirement">
+    - Select **Yes** (and ensure your app uses TLS 1.2 or higher)
+  </Step>
+
+  <Step title="Verification tokens">
+    - For basic Attendee implementation without Zoom webhooks: **No**
+  </Step>
+
+  <Step title="Zoom user data collection">
+    - **No** — hence no OAuth scopes required
+  </Step>
+</Steps>
+
+## Privacy Section
+
+<Steps>
+  <Step title="Under 16 data collection">
+    - Select **No** (include terms to that effect in your privacy policy)
+  </Step>
+
+  <Step title="Industry-specific usage">
+    - Is your app intended for education, healthcare, or government?
+    - Select as applicable
+  </Step>
+
+  <Step title="Privacy policy excerpts">
+    Provide excerpts from your privacy policy covering:
+    - Data subject access rights
+    - How users can exercise those rights
+  </Step>
+</Steps>
+
+## App Submission
+
+<Steps>
+  <Step title="Verify domain">
+    Complete domain verification in the Zoom Developer Portal
+  </Step>
+
+  <Step title="Provide test credentials">
+    Give Zoom test account credentials for the usability review
+  </Step>
+
+  <Step title="Submit application">
+    Click submit and wait for Zoom's review
+  </Step>
+</Steps>
+
+## Review Process
+
+### Usability Review
+
+- Your app enters an approval queue and gets assigned a reviewer
+- The reviewer will log in and test your app as described
+- If they encounter issues, you'll get a "more information required" request
+
+<Tip>
+**Pro tip:** Ask for a meeting with the reviewer. One of our community members had a 30-minute call with the reviewer, answered questions, and got approved on the spot.
+</Tip>
+
+### Security Review
+
+- Zoom will use tools like Burp Suite to intercept and manipulate requests
+- Ensure privileged UI (like admin controls) has proper **server-side** validation
+- Client-side validation alone is not sufficient
+
+<Warning>
+Make sure all security checks are enforced on the backend, not just in the frontend UI.
+</Warning>
+
+## After Approval
+
+✅ Once approved, your Attendee-powered bot can join any external Zoom meeting!
+
+## Community Resources
+
+Two community members have created detailed guides:
+- [Guide by Frazer Kearl (MeetDoris)](https://github.com/attendee-labs/attendee/blob/main/docs/zoom_app_review.md)
+- [Notion guide by community member](https://www.notion.so/Zoom-App-Publishing-for-Attendee-24db06b6bbc68042926df934997ffe49)
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Join Slack" icon="slack" href="https://join.slack.com/t/attendee-community/shared_invite/zt-3l43ns8cl-G8YnMccWVTugMlloUtSf9g">
+    Get help from the Attendee community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/attendee-labs/attendee/issues">
+    Report issues or ask questions
+  </Card>
+</CardGroup>

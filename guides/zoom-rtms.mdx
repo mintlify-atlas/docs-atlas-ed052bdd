@@ -1,0 +1,172 @@
+---
+title: Zoom RTMS (App Sessions)
+description: Use Zoom Realtime Media Streams to access meeting data without a visible bot participant
+---
+
+Zoom [Realtime Media Streams (RTMS)](https://developers.zoom.us/docs/rtms/) is a Zoom-native data pipeline that gives your app access to live audio, video, transcript, and screenshare data from Zoom meetings. Unlike meeting bots which join as visible participants, RTMS streams meeting data directly to your application without adding anyone to the call.
+
+Attendee provides support for RTMS through a new API entity called **App Sessions**. When a user activates an RTMS app during a meeting, Zoom sends a webhook to your application, and you forward that payload to Attendee to create an app session. Attendee then handles connecting to the RTMS stream, processing the media, and delivering transcripts and recordings.
+
+<Info>
+For reference implementations, see the example programs for building a [notetaker](https://github.com/attendee-labs/rtms-notetaker-example) and [sales coach](https://github.com/attendee-labs/rtms-sales-coach-example) with Attendee and RTMS. Watch a [quick demo video](https://www.youtube.com/watch?v=56DzvzJHSv4).
+</Info>
+
+## RTMS vs Bots
+
+There are two key differences between RTMS and bots:
+
+### No bot participant in the meeting
+
+RTMS does not add a participant to the call. The meeting data is streamed to your app through Zoom's infrastructure, so there is no "bot has joined" notification and no extra attendee in the participant list. See [this video](https://youtu.be/YKeVFXSFRGg?si=Vgkl50hOnz4VlnQi&t=149) showing how RTMS apps appear within the Zoom client.
+
+### User controls when your app connects
+
+With a bot, you control when the bot joins the meeting via an API call. With RTMS, the user controls when your app connects by opening the RTMS app within Zoom. Zoom sends your app a webhook that you must respond to. The user can also pause the RTMS app's recording at any time.
+
+### Advantages of RTMS
+
+- **No OBF token required** - RTMS is not affected by Zoom's [March 2, 2026 deadline](https://developers.zoom.us/blog/transition-to-obf-token-meetingsdk-apps/) requiring OBF tokens for Meeting SDK bots joining external meetings
+- **No OAuth flow needed** - You don't need to implement join tokens or OAuth logic
+- **Less CPU usage** - RTMS sends encoded video frames, which are less CPU-intensive to process than raw video frames
+
+### Limitations of RTMS
+
+<Warning>
+RTMS is **receive-only**. If you need your app to post messages to meeting chat or send video/audio into the meeting, you'll need a bot.
+</Warning>
+
+## Implementation Guide
+
+<Steps>
+  <Step title="Create RTMS app in Zoom">
+    1. Go to [Zoom Developer Portal](https://marketplace.zoom.us/user/build) and create a new General app
+    2. Navigate to **Basic Information** and set OAuth redirect URL (can be https://zoom.us if not using OAuth)
+    3. Go to **Access** → **Add new Event Subscription**
+    4. Subscribe to `meeting.rtms_started` and `meeting.rtms_stopped` events
+    5. Set Event notification endpoint URL to your webhook handler
+    6. Navigate to **Scopes** and add:
+       - meeting:read:meeting_audio
+       - meeting:read:meeting_transcript
+       - meeting:read:meeting_chat
+       - meeting:read:meeting_video
+       - meeting:read:meeting_screenshare
+    7. Go to **Local test** → **Add app now** and authorize
+    8. Visit [Zoom App Settings](https://zoom.us/profile/setting?tab=zoomapps)
+    9. Enable "Share realtime meeting content with apps"
+    10. Under "Auto-start apps", select your app
+  </Step>
+
+  <Step title="Register RTMS app with Attendee">
+    1. Go to Attendee dashboard and create a new project
+    2. Navigate to **Settings** → **Credentials**
+    3. Under Zoom OAuth App Credentials, click **Add OAuth App**
+    4. Enter your Zoom Client ID and Client Secret from your RTMS App
+    5. Click **Save**
+  </Step>
+
+  <Step title="Configure Attendee webhooks">
+    1. Go to **Settings** → **Webhooks**
+    2. Click **Create Webhook**
+    3. Select the `bot.state_change` trigger (fires when RTMS session changes state)
+    4. Enter your webhook destination URL
+    5. Click **Create**
+  </Step>
+
+  <Step title="Handle Zoom webhook">
+    Add code to handle the `meeting.rtms_started` webhook from Zoom and forward the payload to Attendee:
+
+    ```javascript
+    app.post('/zoom-webhook', async (req, res) => {
+      const { event, payload } = req.body;
+      
+      if (event === 'meeting.rtms_started') {
+        // Forward to Attendee to create app session
+        const response = await fetch('https://app.attendee.dev/api/v1/app_sessions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${ATTENDEE_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            zoom_rtms: payload,
+            metadata: { user_id: 'your-user-id' },
+            transcription_settings: {
+              deepgram: { language: 'en-US' }
+            }
+          })
+        });
+        
+        const appSession = await response.json();
+        console.log('App session created:', appSession.id);
+      }
+      
+      res.sendStatus(200);
+    });
+    ```
+
+    [View complete example](https://github.com/attendee-labs/rtms-notetaker-example/blob/main/index.js#L70)
+  </Step>
+
+  <Step title="Handle Attendee webhook">
+    Listen for the `bot.state_change` webhook from Attendee to know when the session ends:
+
+    ```javascript
+    app.post('/attendee-webhook', async (req, res) => {
+      const { trigger, data } = req.body;
+      
+      if (trigger === 'bot.state_change' && data.new_state === 'ended') {
+        // Session ended - retrieve transcript and recording
+        const transcriptRes = await fetch(
+          `https://app.attendee.dev/api/v1/app_sessions/${req.body.bot_id}/transcript`,
+          {
+            headers: { 'Authorization': `Token ${ATTENDEE_API_KEY}` }
+          }
+        );
+        
+        const transcript = await transcriptRes.json();
+        console.log('Transcript:', transcript);
+      }
+      
+      res.sendStatus(200);
+    });
+    ```
+
+    [View complete example](https://github.com/attendee-labs/rtms-notetaker-example/blob/main/index.js#L119)
+  </Step>
+</Steps>
+
+## App Session API Endpoints
+
+### Get App Session Media
+
+**GET /api/v1/app_sessions/{id}/media**
+
+Returns the recording and media files for a completed app session. Only available after the session has moved to the `ended` state.
+
+### Get App Session Transcript
+
+**GET /api/v1/app_sessions/{id}/transcript**
+
+Returns the full transcript for a completed app session.
+
+### Get App Session Participant Events
+
+**GET /api/v1/app_sessions/{id}/participant_events**
+
+Returns participant join/leave events for the app session.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Does RTMS require the On Behalf Of (OBF) token?">
+    No. RTMS is a separate integration path from the Meeting SDK and is not affected by Zoom's [March 2, 2026 OBF token deadline](https://developers.zoom.us/blog/transition-to-obf-token-meetingsdk-apps/). If you switch from bots to RTMS, you don't need to implement the OBF token.
+  </Accordion>
+
+  <Accordion title="What happens if the host doesn't have RTMS enabled?">
+    Your app will not receive the `meeting.rtms_started` webhook and no data will be captured. RTMS requires the meeting host's Zoom account to have the feature enabled and your app authorized. This is a key consideration if your users join meetings hosted by people outside your organization.
+  </Accordion>
+
+  <Accordion title="Can I use both RTMS and bots?">
+    Yes. You can use RTMS for receiving meeting data and bots when you need to send data into the meeting (chat messages, audio, video).
+  </Accordion>
+</AccordionGroup>

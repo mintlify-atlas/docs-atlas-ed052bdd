@@ -1,0 +1,209 @@
+---
+title: Participant Events
+description: Track participant joins, leaves, and speech activity in meetings
+---
+
+Attendee tracks all participants in a meeting and when they take certain actions. This information can be used for:
+- Tracking meeting attendance
+- Triggering actions when a certain number of participants join
+- Monitoring when participants are speaking
+- Building analytics dashboards
+
+<Note>
+The bot itself is not considered a participant in the meeting and will not appear in the participant events.
+</Note>
+
+## Event Types
+
+Attendee tracks four types of participant events:
+
+<CardGroup cols={2}>
+  <Card title="Join" icon="user-plus">
+    A participant has joined the meeting
+  </Card>
+  <Card title="Leave" icon="user-minus">
+    A participant has left the meeting
+  </Card>
+  <Card title="Speech Start" icon="microphone">
+    A participant has started speaking
+  </Card>
+  <Card title="Speech Stop" icon="microphone-slash">
+    A participant has stopped speaking
+  </Card>
+</CardGroup>
+
+## Fetching Participant Events
+
+Retrieve a list of participant events for a specific bot by making a GET request to the `/bots/{bot_id}/participant_events` endpoint.
+
+```bash
+curl -X GET https://app.attendee.dev/api/v1/bots/bot_abc123/participant_events \
+  -H 'Authorization: Token YOUR_API_KEY' \
+  -H 'Content-Type: application/json'
+```
+
+### Response Example
+
+```json
+[
+  {
+    "id": "evt_123",
+    "participant_name": "John Doe",
+    "participant_uuid": "16778240",
+    "participant_user_uuid": "AAB6E21A-6B36-EA95-58EC-5AF42CD48AF8",
+    "participant_is_host": false,
+    "event_type": "join",
+    "event_data": {},
+    "timestamp_ms": 1234567890000
+  },
+  {
+    "id": "evt_124",
+    "participant_name": "John Doe",
+    "participant_uuid": "16778240",
+    "participant_user_uuid": "AAB6E21A-6B36-EA95-58EC-5AF42CD48AF8",
+    "participant_is_host": false,
+    "event_type": "speech_start",
+    "event_data": {},
+    "timestamp_ms": 1234567895000
+  }
+]
+```
+
+For complete API documentation, see the [Participant Events API reference](/api-reference/participants/participant-events).
+
+## Real-time Webhooks
+
+You can receive real-time notifications for participant events by setting up webhooks:
+
+<Steps>
+  <Step title="Create webhook">
+    Go to **Settings** → **Webhooks** in the Attendee dashboard and click **Create Webhook**.
+  </Step>
+
+  <Step title="Select triggers">
+    Enable the triggers you need:
+    - `participant_events.join_leave` - For join and leave events
+    - `participant_events.speech_start_stop` - For speech activity
+  </Step>
+
+  <Step title="Specify endpoint">
+    Enter the URL where you want to receive webhook notifications.
+  </Step>
+</Steps>
+
+### Webhook Payload
+
+When a participant event occurs, Attendee sends a POST request to your webhook URL:
+
+```json
+{
+  "idempotency_key": "550e8400-e29b-41d4-a716-446655440000",
+  "bot_id": "bot_abc123",
+  "bot_metadata": { "user_id": "user_456" },
+  "trigger": "participant_events.join_leave",
+  "data": {
+    "id": "evt_123",
+    "participant_name": "John Doe",
+    "participant_uuid": "16778240",
+    "participant_user_uuid": "AAB6E21A-6B36-EA95-58EC-5AF42CD48AF8",
+    "participant_is_host": false,
+    "event_type": "join",
+    "event_data": {},
+    "timestamp_ms": 1234567890000
+  }
+}
+```
+
+For more details on webhook payloads, see the [webhooks documentation](/guides/webhooks#payload-for-participanteventsjoinleave-and-participanteventsspeechstartstop-triggers).
+
+## Use Cases
+
+### Attendance Tracking
+
+Track who attended a meeting and for how long:
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+def get_attendance_summary(bot_id, api_key):
+    url = f"https://app.attendee.dev/api/v1/bots/{bot_id}/participant_events"
+    headers = {
+        "Authorization": f"Token {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(url, headers=headers)
+    events = response.json()
+    
+    # Calculate attendance duration for each participant
+    attendance = {}
+    for event in events:
+        name = event['participant_name']
+        event_type = event['event_type']
+        timestamp = event['timestamp_ms']
+        
+        if name not in attendance:
+            attendance[name] = {'join_time': None, 'total_duration': 0}
+        
+        if event_type == 'join':
+            attendance[name]['join_time'] = timestamp
+        elif event_type == 'leave' and attendance[name]['join_time']:
+            duration = timestamp - attendance[name]['join_time']
+            attendance[name]['total_duration'] += duration
+            attendance[name]['join_time'] = None
+    
+    return attendance
+```
+
+### Speech Activity Analysis
+
+Analyze who spoke and for how long:
+
+```python
+def get_speech_analytics(bot_id, api_key):
+    url = f"https://app.attendee.dev/api/v1/bots/{bot_id}/participant_events"
+    headers = {
+        "Authorization": f"Token {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(url, headers=headers)
+    events = response.json()
+    
+    # Calculate speech duration for each participant
+    speech_stats = {}
+    for event in events:
+        if event['event_type'] not in ['speech_start', 'speech_stop']:
+            continue
+            
+        name = event['participant_name']
+        if name not in speech_stats:
+            speech_stats[name] = {'start_time': None, 'total_speaking_time': 0}
+        
+        if event['event_type'] == 'speech_start':
+            speech_stats[name]['start_time'] = event['timestamp_ms']
+        elif event['event_type'] == 'speech_stop' and speech_stats[name]['start_time']:
+            duration = event['timestamp_ms'] - speech_stats[name]['start_time']
+            speech_stats[name]['total_speaking_time'] += duration
+            speech_stats[name]['start_time'] = None
+    
+    return speech_stats
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/participants/participant-events">
+    Explore the complete Participant Events API
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
+    Set up real-time notifications
+  </Card>
+  <Card title="Transcripts" icon="file-lines" href="/guides/transcription">
+    Get meeting transcripts with speaker attribution
+  </Card>
+  <Card title="List Participants" icon="users" href="/api-reference/participants/list-participants">
+    Get current meeting participants
+  </Card>
+</CardGroup>

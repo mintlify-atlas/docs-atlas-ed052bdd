@@ -49,9 +49,13 @@
               "guides/realtime-audio",
               "guides/scheduled-bots",
               "guides/calendar-integration",
+              "guides/participant-events",
               "guides/zoom-oauth",
+              "guides/zoom-rtms",
+              "guides/zoom-app-review",
               "guides/signed-in-bots",
-              "guides/custom-transcription"
+              "guides/custom-transcription",
+              "guides/faq"
             ]
           },
           {

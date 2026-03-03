@@ -1,0 +1,178 @@
+---
+title: Frequently Asked Questions
+description: Common questions about using Attendee
+---
+
+## Zoom Integration
+
+<AccordionGroup>
+  <Accordion title="How do I get the Zoom client ID and secret?">
+    The Zoom app is provided by you, the developer, not by Attendee. When you input the Zoom client ID and secret, you're specifying the Zoom app that your bot will use to join meetings.
+
+    See the [README](https://github.com/attendee-labs/attendee?tab=readme-ov-file#obtaining-zoom-oauth-credentials) for instructions on obtaining the client ID and secret.
+  </Accordion>
+
+  <Accordion title="Why can't my Zoom bot join external meetings?">
+    Zoom bots must be approved by Zoom to join external meetings. Unapproved Zoom bots can only join meetings that are hosted by the same Zoom account that owns the bot.
+
+    See the [official announcement from Zoom](https://developers.zoom.us/changelog/platform/meeting-sdk-policy-announcement/) for more details.
+
+    <Tip>
+    Check out our [Zoom App Approval guide](/guides/zoom-app-review) for step-by-step instructions on getting your bot approved. The process is straightforward!
+    </Tip>
+
+    Community members have also created helpful guides:
+    - [Guide by MeetDoris](https://github.com/attendee-labs/attendee/blob/main/docs/zoom_app_review.md)
+    - [Notion guide](https://www.notion.so/Zoom-App-Publishing-for-Attendee-24db06b6bbc68042926df934997ffe49)
+  </Accordion>
+
+  <Accordion title="Why is my Zoom bot stuck in 'Joined - Not Recording' state?">
+    This usually happens when external participant recording privileges are not enabled in the Zoom account.
+
+    The user hosting the meeting needs to enable this setting. See [Zoom's support article](https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0063640) for instructions on how to enable external participant recording.
+  </Accordion>
+</AccordionGroup>
+
+## Self-Hosting
+
+<AccordionGroup>
+  <Accordion title="Why is the bot having issues joining a Zoom meeting when running Attendee locally?">
+    You may need to rebuild the Docker image. You can do this in one of two ways:
+
+    **Using Docker command:**
+    ```bash
+    docker compose -f dev.docker-compose.yaml build
+    ```
+
+    **Using Makefile:**
+    ```bash
+    make build
+    ```
+
+    After rebuilding, restart your containers:
+    ```bash
+    docker compose -f dev.docker-compose.yaml up
+    ```
+  </Accordion>
+
+  <Accordion title="Application emits errors when uploading files locally">
+    This may happen if the `AWS_REGION` environment variable is not set correctly. It defaults to `us-east-1`.
+
+    You can set this in your `.env` file:
+    ```bash
+    AWS_REGION=your-preferred-region
+    ```
+
+    Make sure to restart your containers after changing the `.env` file.
+  </Accordion>
+</AccordionGroup>
+
+## API Usage
+
+<AccordionGroup>
+  <Accordion title="How do I get an API key?">
+    1. Create an account in your Attendee instance
+    2. Sign in and navigate to the **API Keys** section in the sidebar
+    3. Click **Create API Key**
+    4. Copy and securely store your API key
+
+    <Warning>
+    API keys are only shown once upon creation. Store them securely!
+    </Warning>
+
+    For more details, see the [Authentication guide](/authentication).
+  </Accordion>
+
+  <Accordion title="What are the rate limits?">
+    Rate limits vary by endpoint. Check your plan details in the Attendee dashboard for specific limits.
+
+    If you need higher limits, [schedule a call](https://calendly.com/d/cw6r-2n4-gcw/attendee-intro-meeting) to discuss enterprise options.
+  </Accordion>
+
+  <Accordion title="How long are transcripts and recordings stored?">
+    Storage duration depends on your configuration:
+    - **Hosted instance**: Contact support for retention policies
+    - **Self-hosted**: You control the retention policy through your S3/storage configuration
+
+    You can delete bot data at any time using the [Delete Bot Data endpoint](/api-reference/bots/delete-data).
+  </Accordion>
+</AccordionGroup>
+
+## Transcription
+
+<AccordionGroup>
+  <Accordion title="Which transcription provider should I use?">
+    It depends on your needs:
+
+    - **Deepgram**: Best price/performance ratio, fast, $200 free credits
+    - **OpenAI**: Cheapest option but less accurate, can switch languages mid-sentence
+    - **Gladia**: More expensive but supports more languages, 10 hours free/month
+    - **Assembly AI**: Similar to Deepgram, very accurate timestamps, $50 free credits
+    - **Closed Captions**: Free but lower quality, no word-level timestamps
+
+    See the [Transcription guide](/guides/transcription#choosing-the-right-transcription-provider) for detailed comparisons.
+  </Accordion>
+
+  <Accordion title="Can I get real-time transcripts?">
+    Yes! Set up a webhook with the `transcript.update` trigger to receive real-time transcript updates as the meeting progresses.
+
+    See the [Webhooks guide](/guides/webhooks) for setup instructions.
+  </Accordion>
+
+  <Accordion title="How accurate is speaker identification?">
+    Attendee provides perfect speaker identification (diarization) because it has access to per-participant audio streams. Each participant's audio is processed separately, so speaker attribution is 100% accurate.
+
+    This works for both third-party transcription providers and closed caption-based transcription.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="My bot is stuck in 'joining' state">
+    Common causes:
+    - Invalid meeting URL
+    - Meeting requires authentication and bot isn't signed in
+    - Meeting has a waiting room (bot will move to `waiting_room` state)
+    - Network connectivity issues
+
+    Check the bot's events in the API response for more details on what's happening.
+  </Accordion>
+
+  <Accordion title="I'm not receiving webhooks">
+    Troubleshooting steps:
+    1. Verify your webhook URL is publicly accessible via HTTPS
+    2. Check that you've selected the correct triggers
+    3. Review the webhook delivery logs in the Attendee dashboard
+    4. Ensure your server returns a 2xx status code
+    5. Check your webhook signature verification
+
+    See the [Webhooks guide](/guides/webhooks#debugging-webhook-deliveries) for more debugging tips.
+  </Accordion>
+
+  <Accordion title="Bot joined but I can't see the recording">
+    Make sure:
+    1. The bot is in the `ended` state (meeting has completed)
+    2. The `recording_state` is `complete`
+    3. You're calling the correct endpoint: `GET /api/v1/bots/{id}/recording`
+
+    Recordings are only available after the bot has finished post-processing.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Help
+
+<CardGroup cols={2}>
+  <Card title="Join Slack Community" icon="slack" href="https://join.slack.com/t/attendee-community/shared_invite/zt-3l43ns8cl-G8YnMccWVTugMlloUtSf9g">
+    Ask questions and get help from the community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/attendee-labs/attendee/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Schedule a Call" icon="calendar" href="https://calendly.com/d/cw6r-2n4-gcw/attendee-intro-meeting">
+    Book time with the team for enterprise needs
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/bots/create-bot">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>
